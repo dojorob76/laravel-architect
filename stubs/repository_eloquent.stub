@@ -1,0 +1,18 @@
+<?php
+
+namespace {{ namespace }};
+
+use {{ model_namespace }}\{{ class }};
+use {{ interface_namespace }}\{{ class }}RepositoryInterface;
+use LaravelArchitect\Base\BaseEloquentRepository;
+
+class Eloquent{{ class }}Repository extends BaseEloquentRepository implements {{ class }}RepositoryInterface
+{
+    /**
+     * Create a new repository instance.
+     */
+    public function __construct({{ class }} $model)
+    {
+        parent::__construct($model);
+    }
+}

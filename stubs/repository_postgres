@@ -1,0 +1,358 @@
+<?php
+
+namespace {{ namespace }};
+
+use {{ interface_namespace }}\{{ class }}RepositoryInterface;
+use LaravelArchitect\Base\BasePostgresRepository;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Collection;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Pagination\LengthAwarePaginator;
+
+class Postgres{{ class }}Repository extends BasePostgresRepository implements {{ class }}RepositoryInterface
+{
+    protected string $table = '{{ table }}';
+    protected string $modelClass = '{{ model_namespace }}\{{ class }}';
+
+    public function all(): Collection
+    {
+        $results = DB::select("SELECT * FROM {$this->table} WHERE deleted_at IS NULL ORDER BY id DESC");
+        return collect($results)->map(fn($item) => $this->hydrateModel($item));
+    }
+
+    public function paginate(?int $perPage = null): LengthAwarePaginator
+    {
+        $limit = $perPage ?? config('api_scaffolding.response_settings.pagination_limit', 15);
+        $page = LengthAwarePaginator::resolveCurrentPage();
+        $offset = ($page - 1) * $limit;
+
+        $results = DB::select(
+            "SELECT * FROM {$this->table} WHERE deleted_at IS NULL ORDER BY id DESC LIMIT ? OFFSET ?",
+            [$limit, $offset]
+        );
+
+        $totalResult = DB::selectOne("SELECT COUNT(*) as count FROM {$this->table} WHERE deleted_at IS NULL");
+        $total = $totalResult->count ?? 0;
+
+        $items = collect($results)->map(fn($item) => $this->hydrateModel($item));
+
+        return new LengthAwarePaginator($items, $total, $limit, $page, [
+            'path' => LengthAwarePaginator::resolveCurrentPath()
+        ]);
+    }
+
+    public function find(int $id): ?Model
+    {
+        $result = DB::selectOne(
+            "SELECT * FROM {$this->table} WHERE id = ? AND deleted_at IS NULL LIMIT 1",
+            [$id]
+        );
+
+        return $result ? $this->hydrateModel($result) : null;
+    }
+
+    public function create(array $data): Model
+    {
+        $columns = array_keys($data);
+        $placeholders = array_map(fn($i) => '$' . ($i + 1), array_keys($data));
+
+        $sql = sprintf(
+            "INSERT INTO {$this->table} (%s, created_at, updated_at) VALUES (%s, NOW(), NOW()) RETURNING *",
+            implode(', ', $columns),
+            implode(', ', $placeholders)
+        );
+
+        $result = DB::selectOne($sql, array_values($data));
+
+        if (!$result) {
+            throw new \RuntimeException("Failed to create record in {$this->table}");
+        }
+
+        return $this->hydrateModel($result);
+    }
+
+    public function update(int $id, array $data): bool
+    {
+        if (empty($data)) {
+            return false;
+        }
+
+        $setParts = [];
+        $values = [];
+        $paramIndex = 1;
+
+        foreach ($data as $col => $value) {
+            $setParts[] = "{$col} = $" . $paramIndex++;
+            $values[] = $value;
+        }
+
+        $values[] = $id;
+
+        $sql = sprintf(
+            "UPDATE {$this->table} SET %s, updated_at = NOW() WHERE id = $%d AND deleted_at IS NULL",
+            implode(', ', $setParts),
+            $paramIndex
+        );
+
+        return DB::update($sql, $values) > 0;
+    }
+
+    public function delete(int $id): bool
+    {
+        if ($this->hasSoftDeletes()) {
+            $sql = "UPDATE {$this->table} SET deleted_at = NOW(), updated_at = NOW() WHERE id = $1 AND deleted_at IS NULL";
+            return DB::update($sql, [$id]) > 0;
+        }
+
+        $sql = "DELETE FROM {$this->table} WHERE id = $1";
+        return DB::delete($sql, [$id]) > 0;
+    }
+
+    public function search(array $filters, ?int $perPage = null): LengthAwarePaginator
+    {
+        $whereClauses = ['deleted_at IS NULL'];
+        $bindings = [];
+        $paramIndex = 1;
+
+        foreach ($filters as $field => $value) {
+            if ($value !== null && $value !== '') {
+                $whereClauses[] = "{$field} ILIKE $" . $paramIndex++;
+                $bindings[] = "%{$value}%";
+            }
+        }
+
+        $whereString = implode(' AND ', $whereClauses);
+
+        $limit = $perPage ?? config('api_scaffolding.response_settings.pagination_limit', 15);
+        $page = LengthAwarePaginator::resolveCurrentPage();
+        $offset = ($page - 1) * $limit;
+
+        $limitParam = '$' . $paramIndex++;
+        $offsetParam = '$' . $paramIndex;
+
+        $bindings[] = $limit;
+        $bindings[] = $offset;
+
+        $results = DB::select(
+            "SELECT * FROM {$this->table} WHERE {$whereString} ORDER BY id DESC LIMIT {$limitParam} OFFSET {$offsetParam}",
+            $bindings
+        );
+
+        $totalResult = DB::selectOne(
+            "SELECT COUNT(*) as count FROM {$this->table} WHERE {$whereString}",
+            array_slice($bindings, 0, -2)
+        );
+        $total = $totalResult->count ?? 0;
+
+        $items = collect($results)->map(fn($item) => $this->hydrateModel($item));
+
+        return new LengthAwarePaginator($items, $total, $limit, $page, [
+            'path' => LengthAwarePaginator::resolveCurrentPath()
+        ]);
+    }
+
+    public function restore(int $id): bool
+    {
+        if (!$this->hasSoftDeletes()) {
+            return false;
+        }
+
+        $sql = "UPDATE {$this->table} SET deleted_at = NULL, updated_at = NOW() WHERE id = $1";
+        return DB::update($sql, [$id]) > 0;
+    }
+
+    public function forceDelete(int $id): bool
+    {
+        $sql = "DELETE FROM {$this->table} WHERE id = $1";
+        return DB::delete($sql, [$id]) > 0;
+    }
+
+    public function findMany(array $ids): Collection
+    {
+        if (empty($ids)) {
+            return collect();
+        }
+
+        $placeholders = implode(',', array_map(fn($i) => '$' . ($i + 1), array_keys($ids)));
+        $sql = "SELECT * FROM {$this->table} WHERE id IN ({$placeholders}) AND deleted_at IS NULL";
+
+        $results = DB::select($sql, array_values($ids));
+
+        return collect($results)->map(fn($item) => $this->hydrateModel($item));
+    }
+
+    public function createMany(array $records): Collection
+    {
+        if (empty($records)) {
+            return collect();
+        }
+
+        DB::beginTransaction();
+
+        try {
+            $created = collect();
+
+            $firstRecord = reset($records);
+            $columns = array_keys($firstRecord);
+
+            $valueGroups = [];
+            $allValues = [];
+            $paramIndex = 1;
+
+            foreach ($records as $data) {
+                $placeholders = [];
+                foreach ($data as $value) {
+                    $placeholders[] = '$' . $paramIndex++;
+                    $allValues[] = $value;
+                }
+                $valueGroups[] = '(' . implode(', ', $placeholders) . ', NOW(), NOW())';
+            }
+
+            $sql = sprintf(
+                "INSERT INTO {$this->table} (%s, created_at, updated_at) VALUES %s RETURNING *",
+                implode(', ', $columns),
+                implode(', ', $valueGroups)
+            );
+
+            $results = DB::select($sql, $allValues);
+
+            foreach ($results as $result) {
+                $created->push($this->hydrateModel($result));
+            }
+
+            DB::commit();
+
+            return $created;
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            throw $e;
+        }
+    }
+
+    public function updateMany(array $records): int
+    {
+        if (empty($records)) {
+            return 0;
+        }
+
+        DB::beginTransaction();
+
+        try {
+            $updated = 0;
+
+            foreach ($records as $data) {
+                if (!isset($data['id'])) {
+                    continue;
+                }
+
+                $id = $data['id'];
+                unset($data['id']);
+
+                if (empty($data)) {
+                    continue;
+                }
+
+                $setParts = [];
+                $values = [];
+                $paramIndex = 1;
+
+                foreach ($data as $col => $value) {
+                    $setParts[] = "{$col} = $" . $paramIndex++;
+                    $values[] = $value;
+                }
+
+                $values[] = $id;
+
+                $sql = sprintf(
+                    "UPDATE {$this->table} SET %s, updated_at = NOW() WHERE id = $%d AND deleted_at IS NULL",
+                    implode(', ', $setParts),
+                    $paramIndex
+                );
+
+                if (DB::update($sql, $values) > 0) {
+                    $updated++;
+                }
+            }
+
+            DB::commit();
+
+            return $updated;
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            throw $e;
+        }
+    }
+
+    public function deleteMany(array $ids): int
+    {
+        if (empty($ids)) {
+            return 0;
+        }
+
+        $placeholders = implode(',', array_map(fn($i) => '$' . ($i + 1), array_keys($ids)));
+
+        if ($this->hasSoftDeletes()) {
+            $sql = "UPDATE {$this->table} SET deleted_at = NOW() WHERE id IN ({$placeholders}) AND deleted_at IS NULL";
+            return DB::update($sql, array_values($ids));
+        }
+
+        $sql = "DELETE FROM {$this->table} WHERE id IN ({$placeholders})";
+        return DB::delete($sql, array_values($ids));
+    }
+
+    public function restoreMany(array $ids): int
+    {
+        if (empty($ids) || !$this->hasSoftDeletes()) {
+            return 0;
+        }
+
+        $placeholders = implode(',', array_map(fn($i) => '$' . ($i + 1), array_keys($ids)));
+        $sql = "UPDATE {$this->table} SET deleted_at = NULL, updated_at = NOW() WHERE id IN ({$placeholders})";
+
+        return DB::update($sql, array_values($ids));
+    }
+
+    public function forceDeleteMany(array $ids): int
+    {
+        if (empty($ids)) {
+            return 0;
+        }
+
+        $placeholders = implode(',', array_map(fn($i) => '$' . ($i + 1), array_keys($ids)));
+        $sql = "DELETE FROM {$this->table} WHERE id IN ({$placeholders})";
+
+        return DB::delete($sql, array_values($ids));
+    }
+
+    protected function hasSoftDeletes(): bool
+    {
+        static $cache = null;
+
+        if ($cache === null) {
+            $result = DB::selectOne(
+                "SELECT column_name FROM information_schema.columns WHERE table_name = $1 AND column_name = $2",
+                [$this->table, 'deleted_at']
+            );
+
+            $cache = $result !== null;
+        }
+
+        return $cache;
+    }
+
+    protected function hydrateModel(object $data): Model
+    {
+        $model = new $this->modelClass;
+
+        foreach (get_object_vars($data) as $key => $value) {
+            $model->setAttribute($key, $value);
+        }
+
+        $model->exists = true;
+        $model->syncOriginal();
+
+        return $model;
+    }
+}

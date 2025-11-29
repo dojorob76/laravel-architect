@@ -1,0 +1,254 @@
+<?php
+
+namespace {{ namespace }};
+
+use {{ base_controller_namespace }};
+use {{ request_namespace }}\{{ class }}Request;
+use {{ service_namespace }}\{{ class }}Service;
+use {{ resource_namespace }}\{{ class }}Resource;
+use {{ resource_namespace }}\{{ class }}Collection;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+
+class {{ class }}Controller extends Controller
+{
+    /**
+     * Create a new controller instance.
+     */
+    public function __construct(
+        protected {{ class }}Service $service
+    ) {}
+
+    /**
+     * Display a listing of the resource.
+     */
+    public function index(Request $request): JsonResponse
+    {
+        $filters = $request->only(['search', 'filter']);
+
+        if (!empty(array_filter($filters))) {
+            $data = $this->service->search($filters);
+        } else {
+            $data = $this->service->getPaginated($request->input('per_page'));
+        }
+
+        return (new {{ class }}Collection($data))
+            ->response()
+            ->setStatusCode(config('api_scaffolding.status_codes.success', 200));
+    }
+
+    /**
+     * Store a newly created resource in storage.
+     */
+    public function store({{ class }}Request $request): JsonResponse
+    {
+        $data = $this->service->create($request->validated());
+
+        return (new {{ class }}Resource($data))
+            ->response()
+            ->setStatusCode(config('api_scaffolding.status_codes.created', 201))
+            ->header('X-Message', config('api_scaffolding.messages.created', 'Resource created successfully.'));
+    }
+
+    /**
+     * Display the specified resource.
+     */
+    public function show(int $id): JsonResponse
+    {
+        $data = $this->service->findById($id);
+
+        if (!$data) {
+            return response()->json([
+                'message' => config('api_scaffolding.messages.not_found', 'Resource not found.')
+            ], config('api_scaffolding.status_codes.not_found', 404));
+        }
+
+        return (new {{ class }}Resource($data))
+            ->response()
+            ->setStatusCode(config('api_scaffolding.status_codes.success', 200));
+    }
+
+    /**
+     * Update the specified resource in storage.
+     */
+    public function update({{ class }}Request $request, int $id): JsonResponse
+    {
+        $updated = $this->service->update($id, $request->validated());
+
+        if (!$updated) {
+            return response()->json([
+                'message' => config('api_scaffolding.messages.not_found', 'Resource not found.')
+            ], config('api_scaffolding.status_codes.not_found', 404));
+        }
+
+        $data = $this->service->findById($id);
+
+        return (new {{ class }}Resource($data))
+            ->response()
+            ->setStatusCode(config('api_scaffolding.status_codes.success', 200))
+            ->header('X-Message', config('api_scaffolding.messages.updated', 'Resource updated successfully.'));
+    }
+
+    /**
+     * Remove the specified resource from storage.
+     */
+    public function destroy(int $id): JsonResponse
+    {
+        $deleted = $this->service->delete($id);
+
+        if (!$deleted) {
+            return response()->json([
+                'message' => config('api_scaffolding.messages.not_found', 'Resource not found.')
+            ], config('api_scaffolding.status_codes.not_found', 404));
+        }
+
+        return response()->json([
+            'message' => config('api_scaffolding.messages.deleted', 'Resource deleted successfully.')
+        ], config('api_scaffolding.status_codes.no_content', 204));
+    }
+
+    /**
+     * Restore a soft-deleted resource.
+     */
+    public function restore(int $id): JsonResponse
+    {
+        $restored = $this->service->restore($id);
+
+        if (!$restored) {
+            return response()->json([
+                'message' => 'Resource not found or cannot be restored.'
+            ], config('api_scaffolding.status_codes.not_found', 404));
+        }
+
+        return response()->json([
+            'message' => 'Resource restored successfully.'
+        ], config('api_scaffolding.status_codes.success', 200));
+    }
+
+    /**
+     * Permanently delete a resource.
+     */
+    public function forceDelete(int $id): JsonResponse
+    {
+        $deleted = $this->service->forceDelete($id);
+
+        if (!$deleted) {
+            return response()->json([
+                'message' => config('api_scaffolding.messages.not_found', 'Resource not found.')
+            ], config('api_scaffolding.status_codes.not_found', 404));
+        }
+
+        return response()->json([
+            'message' => 'Resource permanently deleted.'
+        ], config('api_scaffolding.status_codes.no_content', 204));
+    }
+
+    /**
+     * Get multiple resources by IDs.
+     */
+    public function batchShow(Request $request): JsonResponse
+    {
+        $request->validate([
+            'ids' => 'required|array',
+            'ids.*' => 'required|integer'
+        ]);
+
+        $data = $this->service->findMany($request->input('ids'));
+
+        return response()->json([
+            'data' => {{ class }}Resource::collection($data),
+            'count' => $data->count()
+        ], config('api_scaffolding.status_codes.success', 200));
+    }
+
+    /**
+     * Create multiple resources at once.
+     */
+    public function batchStore(Request $request): JsonResponse
+    {
+        $request->validate([
+            'records' => 'required|array|min:1',
+            'records.*' => 'required|array'
+        ]);
+
+        $created = $this->service->createMany($request->input('records'));
+
+        return response()->json([
+            'data' => {{ class }}Resource::collection($created),
+            'count' => $created->count(),
+            'message' => "{$created->count()} resources created successfully."
+        ], config('api_scaffolding.status_codes.created', 201));
+    }
+
+    /**
+     * Update multiple resources at once.
+     */
+    public function batchUpdate(Request $request): JsonResponse
+    {
+        $request->validate([
+            'records' => 'required|array|min:1',
+            'records.*.id' => 'required|integer'
+        ]);
+
+        $updated = $this->service->updateMany($request->input('records'));
+
+        return response()->json([
+            'updated' => $updated,
+            'message' => "{$updated} resources updated successfully."
+        ], config('api_scaffolding.status_codes.success', 200));
+    }
+
+    /**
+     * Delete multiple resources at once.
+     */
+    public function batchDestroy(Request $request): JsonResponse
+    {
+        $request->validate([
+            'ids' => 'required|array|min:1',
+            'ids.*' => 'required|integer'
+        ]);
+
+        $deleted = $this->service->deleteMany($request->input('ids'));
+
+        return response()->json([
+            'deleted' => $deleted,
+            'message' => "{$deleted} resources deleted successfully."
+        ], config('api_scaffolding.status_codes.success', 200));
+    }
+
+    /**
+     * Restore multiple soft-deleted resources.
+     */
+    public function batchRestore(Request $request): JsonResponse
+    {
+        $request->validate([
+            'ids' => 'required|array|min:1',
+            'ids.*' => 'required|integer'
+        ]);
+
+        $restored = $this->service->restoreMany($request->input('ids'));
+
+        return response()->json([
+            'restored' => $restored,
+            'message' => "{$restored} resources restored successfully."
+        ], config('api_scaffolding.status_codes.success', 200));
+    }
+
+    /**
+     * Force delete multiple resources.
+     */
+    public function batchForceDelete(Request $request): JsonResponse
+    {
+        $request->validate([
+            'ids' => 'required|array|min:1',
+            'ids.*' => 'required|integer'
+        ]);
+
+        $deleted = $this->service->forceDeleteMany($request->input('ids'));
+
+        return response()->json([
+            'deleted' => $deleted,
+            'message' => "{$deleted} resources permanently deleted."
+        ], config('api_scaffolding.status_codes.success', 200));
+    }
+}
