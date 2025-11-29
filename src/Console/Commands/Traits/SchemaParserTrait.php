@@ -34,4 +34,18 @@ trait SchemaParserTrait
     {
         return \Illuminate\Support\Str::camel($name);
     }
+
+    /**
+     * Check if a schema column represents a foreign key.
+     *
+     * Detects foreign keys by checking the 'isForeignKey' flag
+     * or if the column name ends with '_id'.
+     *
+     * @param array $col The column definition from schema
+     * @return bool True if the column is a foreign key
+     */
+    protected function isForeignKey(array $col): bool
+    {
+        return ($col['isForeignKey'] ?? false) || str_ends_with($col['name'], '_id');
+    }
 }

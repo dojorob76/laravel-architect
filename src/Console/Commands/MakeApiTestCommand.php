@@ -120,7 +120,7 @@ class MakeApiTestCommand extends Command
 
         $data = [];
         foreach ($schema as $col) {
-            if (!($col['isForeignKey'] ?? false) && !str_ends_with($col['name'], '_id') && $col['name'] !== 'tenant_id') {
+            if (!$this->isForeignKey($col) && $col['name'] !== 'tenant_id') {
                 $value = $this->generateTestValue($col, true);
                 $data[] = "        '{$col['name']}' => {$value}";
                 break;
@@ -156,7 +156,7 @@ class MakeApiTestCommand extends Command
     protected function buildTestPartialUpdate(array $schema): string
     {
         foreach ($schema as $col) {
-            if (!($col['isForeignKey'] ?? false) && !str_ends_with($col['name'], '_id') && $col['name'] !== 'tenant_id') {
+            if (!$this->isForeignKey($col) && $col['name'] !== 'tenant_id') {
                 $value = $this->generateTestValue($col, true);
                 return "        '{$col['name']}' => {$value}";
             }
@@ -185,7 +185,7 @@ class MakeApiTestCommand extends Command
     protected function buildTestBatchUpdateField(array $schema): string
     {
         foreach ($schema as $col) {
-            if (!($col['isForeignKey'] ?? false) && !str_ends_with($col['name'], '_id') && $col['name'] !== 'tenant_id') {
+            if (!$this->isForeignKey($col) && $col['name'] !== 'tenant_id') {
                 $value = $this->generateTestValue($col, true);
                 return "                '{$col['name']}' => {$value}";
             }
@@ -324,7 +324,7 @@ PHP;
     {
         $type = $col['type'] ?? 'string';
 
-        if (($col['isForeignKey'] ?? false) || str_ends_with($col['name'], '_id')) {
+        if ($this->isForeignKey($col)) {
             $tableName = str_replace('_id', '', $col['name']);
             $foreignModel = Str::studly($tableName);
             return "{$foreignModel}::factory()->create()->id";

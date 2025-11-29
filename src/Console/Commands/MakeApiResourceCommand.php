@@ -67,7 +67,7 @@ class MakeApiResourceCommand extends Command
 
         $fields = [];
         foreach ($schema as $col) {
-            if (!($col['isForeignKey'] ?? false) && !str_ends_with($col['name'], '_id')) {
+            if (!$this->isForeignKey($col)) {
                 $fields[] = "            '{$col['name']}' => \$this->{$col['name']}";
             }
         }
@@ -81,7 +81,7 @@ class MakeApiResourceCommand extends Command
         $resourceNamespace = config('api_scaffolding.namespaces.resources');
 
         foreach ($schema as $col) {
-            if (($col['isForeignKey'] ?? false) || str_ends_with($col['name'], '_id')) {
+            if ($this->isForeignKey($col)) {
                 $tableName = str_replace('_id', '', $col['name']);
                 $relationName = $this->camel($tableName);
                 $resourceClass = Str::studly($tableName) . 'Resource';

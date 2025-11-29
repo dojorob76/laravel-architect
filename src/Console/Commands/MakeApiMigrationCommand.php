@@ -78,9 +78,7 @@ class MakeApiMigrationCommand extends Command
 
     protected function extractForeignKeys(array $schema): array
     {
-        return array_filter($schema, fn($col) =>
-            ($col['isForeignKey'] ?? false) || str_ends_with($col['name'], '_id')
-        );
+        return array_filter($schema, fn($col) => $this->isForeignKey($col));
     }
 
     protected function validateForeignKeys(array $schema, bool $isPivot): bool
@@ -88,7 +86,7 @@ class MakeApiMigrationCommand extends Command
         foreach ($schema as $col) {
             $columnName = $col['name'];
 
-            if (($col['isForeignKey'] ?? false) || str_ends_with($columnName, '_id')) {
+            if ($this->isForeignKey($col)) {
                 if (!str_ends_with($columnName, '_id')) {
                     $this->error("Foreign key column '{$columnName}' must end with '_id'");
                     $this->comment("Example: user_id, blog_post_id, tag_id");
@@ -191,7 +189,7 @@ class MakeApiMigrationCommand extends Command
             $line = $this->buildColumnDefinition($col);
             $lines[] = $line;
 
-            if (($col['isForeignKey'] ?? false) || str_ends_with($col['name'], '_id')) {
+            if ($this->isForeignKey($col)) {
                 if (!isset($col['foreignTable'])) {
                     $col['foreignTable'] = str_replace('_id', '', $col['name']);
                 }

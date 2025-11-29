@@ -57,7 +57,7 @@ class MakeApiFactoryCommand extends Command
     {
         $type = $col['type'] ?? 'string';
 
-        if (($col['isForeignKey'] ?? false) || str_ends_with($col['name'], '_id')) {
+        if ($this->isForeignKey($col)) {
             $tableName = str_replace('_id', '', $col['name']);
             $foreignModel = Str::studly($tableName);
             $modelNamespace = config('api_scaffolding.namespaces.models');

@@ -83,7 +83,7 @@ class MakeApiModelCommand extends Command
         $relationships = [];
 
         foreach ($schema as $col) {
-            if (($col['isForeignKey'] ?? false) || str_ends_with($col['name'], '_id')) {
+            if ($this->isForeignKey($col)) {
                 $relationships[] = $this->buildBelongsToRelationship($col, $namespace);
             }
         }

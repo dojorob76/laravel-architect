@@ -82,7 +82,7 @@ class MakeApiRequestCommand extends Command
             $rules[] = 'unique:' . $tableName . ',' . $col['name'];
         }
 
-        if (($col['isForeignKey'] ?? false) || str_ends_with($col['name'], '_id')) {
+        if ($this->isForeignKey($col)) {
             $foreignTable = isset($col['foreignTable'])
                 ? $this->snake($this->pluralize($col['foreignTable']))
                 : $this->snake($this->pluralize(str_replace('_id', '', $col['name'])));
