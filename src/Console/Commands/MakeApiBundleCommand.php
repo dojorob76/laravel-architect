@@ -11,7 +11,6 @@ class MakeApiBundleCommand extends Command
                             {--soft-deletes}
                             {--multi-tenant}
                             {--composite-unique=}
-                            {--pivot=false}
                             {--driver=eloquent : Repository driver (eloquent|mysql|postgres|all)}';
 
     protected $description = 'Scaffold a complete API resource bundle';
@@ -23,26 +22,23 @@ class MakeApiBundleCommand extends Command
         $softDeletes = $this->option('soft-deletes');
         $multiTenant = $this->option('multi-tenant');
         $compositeUnique = $this->option('composite-unique');
-        $isPivot = $this->option('pivot') === 'true';
         $driver = $this->option('driver');
 
-        // Args for migration (includes composite-unique and pivot)
+        // Args for migration (includes composite-unique)
         $migrationArgs = [
             'name' => $name,
             '--schema' => $schema,
             '--soft-deletes' => $softDeletes,
             '--multi-tenant' => $multiTenant,
             '--composite-unique' => $compositeUnique,
-            '--pivot' => $isPivot ? 'true' : 'false',
         ];
 
-        // Args for model (soft-deletes + multi-tenant + pivot)
+        // Args for model (soft-deletes + multi-tenant)
         $modelArgs = [
             'name' => $name,
             '--schema' => $schema,
             '--soft-deletes' => $softDeletes,
             '--multi-tenant' => $multiTenant,
-            '--pivot' => $isPivot,
         ];
 
         // Args for test (soft-deletes + multi-tenant + composite-unique)
@@ -74,10 +70,6 @@ class MakeApiBundleCommand extends Command
 
         $this->info("🚀 Scaffolding API bundle for: {$name}");
 
-        if ($isPivot) {
-            $this->comment("   • Pivot table (no service/controller/routes)");
-        }
-
         if ($softDeletes) {
             $this->comment("   • With soft deletes");
         }
@@ -105,42 +97,31 @@ class MakeApiBundleCommand extends Command
         $this->info('🗄️  Creating repositories...');
         $this->call('make:api-repository', array_merge($schemaCompositeArgs, ['--driver' => $driver]));
 
-        // Skip service, controller, request, resource, tests, and routes for pivot tables
-        if (!$isPivot) {
-            $this->info('⚙️  Creating service...');
-            $this->call('make:api-service', $nameOnlyArgs);
+        $this->info('⚙️  Creating service...');
+        $this->call('make:api-service', $nameOnlyArgs);
 
-            $this->info('✅ Creating form request...');
-            $this->call('make:api-request', $schemaCompositeArgs);
+        $this->info('✅ Creating form request...');
+        $this->call('make:api-request', $schemaCompositeArgs);
 
-            $this->info('🎨 Creating API resources...');
-            $this->call('make:api-resource', ['name' => $name, '--schema' => $schema]);
+        $this->info('🎨 Creating API resources...');
+        $this->call('make:api-resource', ['name' => $name, '--schema' => $schema]);
 
-            $this->info('🎮 Creating controller...');
-            $this->call('make:api-controller', $nameOnlyArgs);
+        $this->info('🎮 Creating controller...');
+        $this->call('make:api-controller', $nameOnlyArgs);
 
-            $this->info('🧪 Creating tests...');
-            $this->call('make:api-test', $testArgs);
+        $this->info('🧪 Creating tests...');
+        $this->call('make:api-test', $testArgs);
 
-            $this->info('🛣️  Adding routes...');
-            $this->call('make:api-routes', $routesArgs);
-        }
+        $this->info('🛣️  Adding routes...');
+        $this->call('make:api-routes', $routesArgs);
 
         $this->newLine();
         $this->info("✨ Bundle scaffolding complete for {$name}!");
 
-        if (!$isPivot) {
-            $this->newLine();
-            $this->comment('📋 Next steps:');
-            $this->comment('1. Add repository binding to a service provider');
-            $this->comment('2. Run: php artisan migrate');
-            $this->comment('3. Test your API endpoints!');
-        } else {
-            $this->newLine();
-            $this->comment('📋 Next steps:');
-            $this->comment('1. Add repository binding to a service provider');
-            $this->comment('2. Run: php artisan migrate');
-            $this->comment('3. Access pivot data through parent models');
-        }
+        $this->newLine();
+        $this->comment('📋 Next steps:');
+        $this->comment('1. Add repository binding to a service provider');
+        $this->comment('2. Run: php artisan migrate');
+        $this->comment('3. Test your API endpoints!');
     }
 }
