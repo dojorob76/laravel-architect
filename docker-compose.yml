@@ -1,3 +1,11 @@
+# ⚠️ DEVELOPMENT/TESTING ONLY - DO NOT USE IN PRODUCTION
+#
+# This docker-compose.yml is for testing the Laravel Architect package itself.
+# If you're using Laravel Architect in your Laravel app, use your app's own database setup.
+#
+# These are intentionally simple test credentials for local development.
+# Database ports are bound to localhost (127.0.0.1) for security.
+
 version: '3.8'
 
 services:
@@ -27,12 +35,12 @@ services:
     image: mysql:8.0
     container_name: laravel_architect_mysql
     ports:
-      - "33060:3306"
+      - "127.0.0.1:33060:3306"  # Bound to localhost only
     environment:
-      MYSQL_ROOT_PASSWORD: root
-      MYSQL_DATABASE: laravel_architect_test
-      MYSQL_USER: laravel
-      MYSQL_PASSWORD: secret
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-laravel_architect_test}
+      MYSQL_USER: ${MYSQL_USER:-laravel}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-secret}
     volumes:
       - mysql_data:/var/lib/mysql
       - ./docker/mysql/init:/docker-entrypoint-initdb.d
@@ -49,11 +57,11 @@ services:
     image: postgres:16-alpine
     container_name: laravel_architect_postgres
     ports:
-      - "54320:5432"
+      - "127.0.0.1:54320:5432"  # Bound to localhost only
     environment:
-      POSTGRES_DB: laravel_architect_test
-      POSTGRES_USER: laravel
-      POSTGRES_PASSWORD: secret
+      POSTGRES_DB: ${POSTGRES_DB:-laravel_architect_test}
+      POSTGRES_USER: ${POSTGRES_USER:-laravel}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-secret}
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./docker/postgres/init:/docker-entrypoint-initdb.d

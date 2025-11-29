@@ -114,9 +114,18 @@ Register in `config/app.php`:
 
 ## 🐳 Docker Development Environment
 
-For a containerized development environment with support for testing all database types (MySQL, PostgreSQL, SQLite), see [DOCKER.md](DOCKER.md).
+**⚠️ For Package Contributors Only**
 
-### Quick Start with Docker
+The Docker setup is for **developing and testing the Laravel Architect package itself**. If you're using Laravel Architect in your Laravel application, you do NOT need this—use your application's own database configuration.
+
+### What is This For?
+
+The Docker environment provides:
+- 🧪 **Multi-database testing** - Test package generators against SQLite, MySQL, and PostgreSQL
+- 🏗️ **Package development** - Isolated environment for contributing to Laravel Architect
+- ⚡ **Quick setup** - Everything needed for package testing in one command
+
+### Quick Start for Contributors
 
 ```bash
 # Build and start containers
@@ -129,7 +138,14 @@ For a containerized development environment with support for testing all databas
 ./docker.sh test-all
 ```
 
-For complete Docker documentation, see [DOCKER.md](DOCKER.md).
+### Important Notes
+
+- ✅ **Test credentials are simple by design** - These databases only exist for package testing
+- ✅ **Ports are localhost-only** - Database ports bound to 127.0.0.1 for security
+- ✅ **No .env required** - Works with sensible defaults; `.env.example` available for customization
+- ❌ **Not for production** - This setup is purely for package development and testing
+
+For complete Docker documentation, commands, and troubleshooting, see [DOCKER.md](DOCKER.md).
 
 ---
 

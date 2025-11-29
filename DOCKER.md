@@ -11,11 +11,44 @@ The Docker environment provides:
 - SQLite support (in-memory and file-based)
 - Helper scripts for common development tasks
 
+## ⚠️ Security Notice
+
+**This Docker setup is FOR PACKAGE DEVELOPMENT AND TESTING ONLY.**
+
+This environment is designed for developers contributing to or testing the Laravel Architect package itself. It is NOT intended for production use.
+
+### Important Security Information:
+
+- ✅ **Test credentials are intentionally simple** - These databases only exist for running package tests
+- ✅ **Test databases contain zero real data** - Tables are created and destroyed during test runs
+- ✅ **Only run on local development machines** - Not designed for production or cloud deployments
+- ✅ **Ports are localhost-only** - Database ports are bound to 127.0.0.1 for security
+- ❌ **DO NOT use this setup for production applications** - Use proper production database configuration
+- ❌ **DO NOT run on publicly accessible servers** - This is a local development tool
+
+### For Laravel Application Developers:
+
+If you're using the Laravel Architect package in your Laravel application (via `composer require`), you do **NOT** need this Docker setup. This is only for package contributors. Your Laravel application should use its own database configuration as normal.
+
 ## Prerequisites
 
 - Docker Desktop (or Docker Engine + Docker Compose)
 - At least 2GB of available RAM
 - 1GB of available disk space
+
+## Configuration (Optional)
+
+The Docker setup works with default test credentials out of the box. If you need to customize them:
+
+```bash
+# Copy the example environment file
+cp .env.example .env
+
+# Edit .env with your preferred test credentials (optional)
+nano .env
+```
+
+**Note:** The default credentials in `.env.example` are perfectly fine for most developers. Customization is rarely needed.
 
 ## Quick Start
 
@@ -207,21 +240,21 @@ Runs the entire test suite against all three databases.
 
 ### Connecting from Host Machine
 
-You can connect to the databases from your host machine using these credentials:
+You can connect to the databases from your host machine (e.g., using TablePlus, DBeaver, or command-line clients) using these credentials:
 
 **MySQL:**
-- Host: `localhost`
+- Host: `127.0.0.1` (localhost only - not accessible from other machines)
 - Port: `33060`
 - Database: `laravel_architect_test`
 - Username: `laravel`
-- Password: `secret`
+- Password: `secret` (default, customizable via `.env`)
 
 **PostgreSQL:**
-- Host: `localhost`
+- Host: `127.0.0.1` (localhost only - not accessible from other machines)
 - Port: `54320`
 - Database: `laravel_architect_test`
 - Username: `laravel`
-- Password: `secret`
+- Password: `secret` (default, customizable via `.env`)
 
 ### Connecting from PHP Container
 

@@ -11,6 +11,7 @@ composer.lock
 docker-compose.override.yml
 .docker/
 *.log
+.env
 
 # Database files
 *.sqlite
