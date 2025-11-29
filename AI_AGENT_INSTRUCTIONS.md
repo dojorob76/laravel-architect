@@ -851,6 +851,94 @@ php artisan make:api-routes {Name} [--soft-deletes]
 
 ---
 
+## 🐳 Docker Environment Context (For AI Assistants)
+
+### What the Docker Setup Is
+
+The Laravel Architect package includes a Docker environment (`docker-compose.yml`, `docker.sh`, `DOCKER.md`) for **package development and testing only**.
+
+### Critical Understanding for AI Assistants
+
+**When helping users, you need to distinguish between two contexts:**
+
+#### Context 1: Package Development (Docker IS relevant)
+User is **contributing to Laravel Architect** itself:
+```
+User: "How do I test my changes to the package?"
+AI: "Use the Docker setup! Run ./docker.sh test-all to test against all databases"
+```
+
+#### Context 2: Package Usage (Docker NOT relevant)
+User is **using Laravel Architect in their Laravel app**:
+```
+User: "How do I use Laravel Architect in my project?"
+AI: "Install via composer require. You DON'T need the Docker setup—use your app's database."
+```
+
+### Docker Environment Details
+
+**What It Provides:**
+- PHP 8.4 CLI container for running package tests
+- MySQL 8.0 for testing MySQL repository generators
+- PostgreSQL 16 for testing PostgreSQL repository generators
+- SQLite support (in-memory) for fast testing
+
+**Credentials (Test Only):**
+- MySQL: `laravel` / `secret` (port 33060, localhost only)
+- PostgreSQL: `laravel` / `secret` (port 54320, localhost only)
+- These are **intentionally simple test credentials**
+- Databases contain zero real data (only test fixtures)
+
+**Environment Variables:**
+- `.env.example` exists but `.env` is optional
+- Default values use shell parameter expansion: `${VAR:-default}`
+- Everything works without `.env` file (defaults built into docker-compose.yml)
+
+**Security Context:**
+- Ports bound to `127.0.0.1` only (not accessible from network)
+- Clear warnings in `DOCKER.md` and `docker-compose.yml` about dev/test only
+- Not designed for production use
+
+### How AI Assistants Should Handle This
+
+✅ **DO:**
+- Explain Docker setup when user is contributing to the package
+- Reference `DOCKER.md` for package development questions
+- Clarify that end users don't need Docker
+- Explain test credentials are intentionally simple
+
+❌ **DON'T:**
+- Suggest Docker setup for users installing the package in their Laravel app
+- Treat test credentials as security vulnerabilities
+- Recommend production use of the Docker environment
+- Confuse package development with package usage
+
+### Example Scenarios
+
+**Scenario 1: Contributing to Package**
+```
+User: "I want to add a new feature to Laravel Architect"
+AI Response: "Great! Here's how to set up the development environment:
+1. Clone the repo
+2. Run ./docker.sh build && ./docker.sh up
+3. Run ./docker.sh composer-install
+4. Make your changes
+5. Test with ./docker.sh test-all
+See DOCKER.md for complete details."
+```
+
+**Scenario 2: Using the Package**
+```
+User: "I want to generate API resources in my Laravel app"
+AI Response: "Install Laravel Architect in your application:
+1. composer require vendor/laravel-architect
+2. php artisan vendor:publish --tag=api-scaffolding-config
+3. Use php artisan make:api-bundle to generate resources
+Note: You use your app's existing database—no special setup needed."
+```
+
+---
+
 ## 🎯 Your Goal as an AI Agent
 
 Your job is to:

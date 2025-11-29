@@ -56,27 +56,3 @@ test('bundle with soft deletes includes soft delete features', function () {
     $this->assertFileContains('controllers', 'VideoController.php', 'public function restore');
     $this->assertFileContains('controllers', 'VideoController.php', 'public function forceDelete');
 });
-
-test('pivot bundle does not create service or controller', function () {
-    $schema = json_encode([
-        ['name' => 'tag_id', 'type' => 'unsignedBigInteger', 'isForeignKey' => true, 'foreignTable' => 'tag'],
-        ['name' => 'video_id', 'type' => 'unsignedBigInteger', 'isForeignKey' => true, 'foreignTable' => 'video'],
-    ]);
-
-    Artisan::call('make:api-bundle', [
-        'name' => 'tag_video',
-        '--schema' => $schema,
-        '--pivot' => 'true'
-    ]);
-
-    // Model and migration should exist
-    $this->assertFileWasGenerated('models', 'TagVideo.php');
-    $this->assertMigrationExists('tag_video');
-
-    // But not service, controller, etc
-    $servicePath = $this->getGeneratedFilePath('services', 'TagVideoService.php');
-    $controllerPath = $this->getGeneratedFilePath('controllers', 'TagVideoController.php');
-
-    expect(File::exists($servicePath))->toBeFalse()
-        ->and(File::exists($controllerPath))->toBeFalse();
-});

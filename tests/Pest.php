@@ -1,6 +1,6 @@
 <?php
 
-use tests\TestCase;
+use LaravelArchitect\Tests\TestCase;
 
 uses(TestCase::class)->in('Feature');
 

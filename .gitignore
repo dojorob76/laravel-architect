@@ -5,3 +5,14 @@ composer.lock
 .vscode/
 *.cache
 .phpunit.result.cache
+.claude/
+
+# Docker
+docker-compose.override.yml
+.docker/
+*.log
+.env
+
+# Database files
+*.sqlite
+*.sqlite-journal

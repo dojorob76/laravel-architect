@@ -10,6 +10,26 @@ trait SchemaParserTrait
         return json_decode($schema, true) ?? [];
     }
 
+    protected function parseCompositeUnique(?string $compositeUniqueJson): array
+    {
+        if (!$compositeUniqueJson) {
+            return [];
+        }
+
+        $parsed = json_decode($compositeUniqueJson, true);
+
+        if (!is_array($parsed)) {
+            return [];
+        }
+
+        // If single array of strings, wrap it in another array
+        if (!empty($parsed) && !is_array($parsed[0])) {
+            return [$parsed];
+        }
+
+        return $parsed;
+    }
+
     protected function getStub(string $name): string
     {
         $path = __DIR__ . '/../../../../stubs/' . $name . '.stub';
