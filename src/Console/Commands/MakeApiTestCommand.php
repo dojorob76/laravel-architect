@@ -22,9 +22,9 @@ class MakeApiTestCommand extends Command
         $multiTenant = $this->option('multi-tenant');
         $compositeUnique = $this->parseCompositeUnique($this->option('composite-unique'));
 
-        $className = $this->studly($name);
+        $className = Str::studly($name);
         $route = $this->getTableName($name);
-        $singularRoute = $this->snake($name);
+        $singularRoute = Str::snake($name);
         $table = $this->getTableName($name);
         $modelNamespace = config('api_scaffolding.namespaces.models');
 

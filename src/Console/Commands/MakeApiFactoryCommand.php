@@ -19,7 +19,7 @@ class MakeApiFactoryCommand extends Command
         $name = $this->argument('name');
         $schema = $this->parseSchema($this->option('schema'));
         $compositeUnique = $this->parseCompositeUnique($this->option('composite-unique'));
-        $className = $this->studly($name);
+        $className = Str::studly($name);
         $namespace = config('api_scaffolding.namespaces.factories');
         $modelNamespace = config('api_scaffolding.namespaces.models');
 

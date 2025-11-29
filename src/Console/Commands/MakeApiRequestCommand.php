@@ -19,7 +19,7 @@ class MakeApiRequestCommand extends Command
         $name = $this->argument('name');
         $schema = $this->parseSchema($this->option('schema'));
         $compositeUnique = $this->parseCompositeUnique($this->option('composite-unique'));
-        $className = $this->studly($name);
+        $className = Str::studly($name);
         $namespace = config('api_scaffolding.namespaces.requests');
 
         [$rulesStr, $patchRulesStr] = $this->buildValidationRules($schema, $compositeUnique, $name);
@@ -60,7 +60,7 @@ class MakeApiRequestCommand extends Command
 
         // Add composite unique validation rules
         if (!empty($compositeUnique)) {
-            $tableName = $this->snake($this->pluralize($modelName));
+            $tableName = Str::snake(Str::plural($modelName));
             foreach ($compositeUnique as $index => $columns) {
                 $compositeRuleName = 'composite_unique_' . $index;
                 $columnsStr = implode(',', $columns);
@@ -68,8 +68,8 @@ class MakeApiRequestCommand extends Command
                 // Composite unique validation for: {$columnsStr}
                 \$query = \\DB::table('{$tableName}');
                 " . implode("\n                ", array_map(fn($col) => "\$query->where('{$col}', \$this->input('{$col}'));", $columns)) . "
-                if (\$this->route('" . $this->camel($modelName) . "')) {
-                    \$query->where('id', '!=', \$this->route('" . $this->camel($modelName) . "')->id ?? \$this->route('" . $this->camel($modelName) . "'));
+                if (\$this->route('" . Str::camel($modelName) . "')) {
+                    \$query->where('id', '!=', \$this->route('" . Str::camel($modelName) . "')->id ?? \$this->route('" . Str::camel($modelName) . "'));
                 }
                 if (\$query->exists()) {
                     \$fail('The combination of " . implode(', ', $columns) . " has already been taken.');
@@ -98,13 +98,13 @@ class MakeApiRequestCommand extends Command
         $rules = array_merge($rules, $this->getTypeValidationRules($type));
 
         if ($col['unique'] ?? false) {
-            $tableName = $this->snake($this->pluralize($col['table'] ?? 'table'));
+            $tableName = Str::snake(Str::plural($col['table'] ?? 'table'));
             $rules[] = 'unique:' . $tableName . ',' . $col['name'];
         }
 
         if ($this->isForeignKey($col)) {
             $foreignTable = isset($col['foreignTable'])
-                ? $this->snake($this->pluralize($col['foreignTable']))
+                ? Str::snake(Str::plural($col['foreignTable']))
                 : $this->getForeignTableNamePluralized($col['name']);
 
             $rules[] = "exists:{$foreignTable},id";

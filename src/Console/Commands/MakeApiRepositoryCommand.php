@@ -19,7 +19,7 @@ class MakeApiRepositoryCommand extends Command
         $name = $this->argument('name');
         $driver = $this->option('driver');
         $compositeUnique = $this->parseCompositeUnique($this->option('composite-unique'));
-        $className = $this->studly($name);
+        $className = Str::studly($name);
         $tableName = $this->getTableName($name);
 
         $namespace = config('api_scaffolding.namespaces.repositories');

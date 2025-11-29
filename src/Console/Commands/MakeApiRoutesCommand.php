@@ -18,7 +18,7 @@ class MakeApiRoutesCommand extends Command
     {
         $name = $this->argument('name');
         $hasSoftDeletes = $this->option('soft-deletes');
-        $className = $this->studly($name);
+        $className = Str::studly($name);
         $routeName = Str::snake(Str::pluralStudly($name));
 
         $apiRoutesPath = base_path(config('api_scaffolding.paths.routes'));

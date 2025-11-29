@@ -17,7 +17,7 @@ class MakeApiControllerCommand extends Command
     public function handle(Filesystem $files): void
     {
         $name = $this->argument('name');
-        $className = $this->studly($name);
+        $className = Str::studly($name);
 
         $namespace = config('api_scaffolding.namespaces.controllers');
         $baseControllerNamespace = config('api_scaffolding.namespaces.base_controller');

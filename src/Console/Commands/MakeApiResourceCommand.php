@@ -18,7 +18,7 @@ class MakeApiResourceCommand extends Command
     {
         $name = $this->argument('name');
         $schema = $this->parseSchema($this->option('schema'));
-        $className = $this->studly($name);
+        $className = Str::studly($name);
         $namespace = config('api_scaffolding.namespaces.resources');
 
         $this->createResource($files, $className, $namespace, $schema);
@@ -80,7 +80,7 @@ class MakeApiResourceCommand extends Command
         foreach ($schema as $col) {
             if ($this->isForeignKey($col)) {
                 $tableName = $this->extractForeignTableName($col['name']);
-                $relationName = $this->camel($tableName);
+                $relationName = Str::camel($tableName);
                 $resourceClass = $this->getForeignModelName($col['name']) . 'Resource';
 
                 $relationships[] = "            '{$relationName}' => new \\{$resourceNamespace}\\{$resourceClass}(\$this->whenLoaded('{$relationName}'))";

@@ -107,9 +107,9 @@ class MakeApiMigrationCommand extends Command
             sort($fkNames);
             $expectedName = implode('_', $fkNames);
 
-            if ($this->snake($this->argument('name')) !== $expectedName) {
+            if (Str::snake($this->argument('name')) !== $expectedName) {
                 $this->warn("Pivot table name should be '{$expectedName}' (alphabetical order)");
-                $this->comment("Current: " . $this->snake($this->argument('name')));
+                $this->comment("Current: " . Str::snake($this->argument('name')));
 
                 if (!$this->confirm('Continue anyway?', false)) {
                     return false;
@@ -130,7 +130,7 @@ class MakeApiMigrationCommand extends Command
         }
 
         $migrationsPath = base_path(config('api_scaffolding.paths.migrations'));
-        $pluralTableName = $this->pluralize($tableName);
+        $pluralTableName = Str::plural($tableName);
 
         if (File::exists($migrationsPath)) {
             $migrations = File::files($migrationsPath);
@@ -291,7 +291,7 @@ class MakeApiMigrationCommand extends Command
     protected function buildForeignKeyConstraint(array $col): string
     {
         $columnName = $col['name'];
-        $foreignTable = $this->snake($this->pluralize($col['foreignTable'] ?? ''));
+        $foreignTable = Str::snake(Str::plural($col['foreignTable'] ?? ''));
         $foreignColumn = 'id';
 
         $constraint = "            \$table->foreign('{$columnName}')";

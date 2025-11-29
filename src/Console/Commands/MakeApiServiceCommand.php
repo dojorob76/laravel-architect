@@ -17,7 +17,7 @@ class MakeApiServiceCommand extends Command
     public function handle(Filesystem $files): void
     {
         $name = $this->argument('name');
-        $className = $this->studly($name);
+        $className = Str::studly($name);
         $namespace = config('api_scaffolding.namespaces.services');
         $interfaceNamespace = config('api_scaffolding.namespaces.repository_interfaces');
 

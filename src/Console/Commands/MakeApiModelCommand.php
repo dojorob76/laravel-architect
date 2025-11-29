@@ -20,7 +20,7 @@ class MakeApiModelCommand extends Command
         $schema = $this->parseSchema($this->option('schema'));
         $isPivot = $this->option('pivot') === 'true';
 
-        $className = $this->studly($name);
+        $className = Str::studly($name);
         $tableName = $this->getTableName($name, $isPivot);
         $namespace = $this->getNamespace('models');
 
@@ -98,7 +98,7 @@ class MakeApiModelCommand extends Command
     {
         $foreignKeyName = $col['name'];
         $tableName = $this->extractForeignTableName($foreignKeyName);
-        $methodName = $this->camel($tableName);
+        $methodName = Str::camel($tableName);
         $modelName = $this->getForeignModelName($foreignKeyName);
 
         return <<<PHP

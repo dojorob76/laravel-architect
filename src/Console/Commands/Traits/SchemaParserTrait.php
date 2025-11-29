@@ -40,26 +40,6 @@ trait SchemaParserTrait
         return file_get_contents($path);
     }
 
-    protected function pluralize(string $name): string
-    {
-        return \Illuminate\Support\Str::plural($name);
-    }
-
-    protected function snake(string $name): string
-    {
-        return \Illuminate\Support\Str::snake($name);
-    }
-
-    protected function camel(string $name): string
-    {
-        return \Illuminate\Support\Str::camel($name);
-    }
-
-    protected function studly(string $name): string
-    {
-        return \Illuminate\Support\Str::studly($name);
-    }
-
     /**
      * Write content to a file, ensuring the directory exists.
      *
@@ -134,9 +114,9 @@ trait SchemaParserTrait
     protected function getTableName(string $name, bool $isPivot = false): string
     {
         if ($isPivot) {
-            return $this->snake($name);
+            return \Illuminate\Support\Str::snake($name);
         }
-        return $this->snake($this->pluralize($name));
+        return \Illuminate\Support\Str::snake(\Illuminate\Support\Str::plural($name));
     }
 
     /**
@@ -162,7 +142,7 @@ trait SchemaParserTrait
      */
     protected function getForeignModelName(string $columnName): string
     {
-        return $this->studly($this->extractForeignTableName($columnName));
+        return \Illuminate\Support\Str::studly($this->extractForeignTableName($columnName));
     }
 
     /**
@@ -175,7 +155,7 @@ trait SchemaParserTrait
      */
     protected function getForeignTableNamePluralized(string $columnName): string
     {
-        return $this->snake($this->pluralize($this->extractForeignTableName($columnName)));
+        return \Illuminate\Support\Str::snake(\Illuminate\Support\Str::plural($this->extractForeignTableName($columnName)));
     }
 
     /**
