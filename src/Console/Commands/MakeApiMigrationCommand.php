@@ -123,7 +123,7 @@ class MakeApiMigrationCommand extends Command
     protected function modelOrTableExists(string $tableName): bool
     {
         $modelName = Str::studly($tableName);
-        $modelPath = base_path(config('api_scaffolding.paths.models') . "/{$modelName}.php");
+        $modelPath = $this->getModelPath($modelName);
 
         if (File::exists($modelPath)) {
             return true;

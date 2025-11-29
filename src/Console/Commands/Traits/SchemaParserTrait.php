@@ -97,6 +97,17 @@ trait SchemaParserTrait
     }
 
     /**
+     * Get the full path to a model file.
+     *
+     * @param string $modelName The StudlyCase model name
+     * @return string The absolute path to the model file
+     */
+    protected function getModelPath(string $modelName): string
+    {
+        return $this->getPath('models') . "/{$modelName}.php";
+    }
+
+    /**
      * Check if a schema column represents a foreign key.
      *
      * Detects foreign keys by checking the 'isForeignKey' flag
