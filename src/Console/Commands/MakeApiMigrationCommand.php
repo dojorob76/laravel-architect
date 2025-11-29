@@ -26,7 +26,7 @@ class MakeApiMigrationCommand extends Command
             return;
         }
 
-        $tableName = $isPivot ? $this->snake($name) : $this->snake($this->pluralize($name));
+        $tableName = $this->getTableName($name, $isPivot);
 
         if ($isPivot && empty($compositeUnique)) {
             $foreignKeys = $this->extractForeignKeys($schema);
@@ -47,8 +47,7 @@ class MakeApiMigrationCommand extends Command
         $filename = date('Y_m_d_His') . "_create_{$tableName}_table.php";
         $path = base_path(config('api_scaffolding.paths.migrations') . "/{$filename}");
 
-        $files->ensureDirectoryExists(dirname($path));
-        $files->put($path, $content);
+        $this->writeFile($files, $path, $content);
 
         $this->info("Migration created: {$filename}");
 
@@ -74,13 +73,13 @@ class MakeApiMigrationCommand extends Command
                     return false;
                 }
 
-                $tableName = str_replace('_id', '', $columnName);
+                $tableName = $this->extractForeignTableName($columnName);
 
                 if (!$this->modelOrTableExists($tableName)) {
                     $this->error("Foreign key '{$columnName}' references table/model '{$tableName}' which does not exist.");
                     $this->newLine();
                     $this->comment("You must create the '{$tableName}' model first:");
-                    $this->comment("  php artisan make:api-bundle " . Str::studly($tableName));
+                    $this->comment("  php artisan make:api-bundle " . $this->getForeignModelName($columnName));
                     $this->newLine();
                     $this->comment("Or if the table exists with a different name, rename your foreign key to match:");
                     $this->comment("  Change '{$columnName}' to '{existing_table}_id'");
@@ -104,7 +103,7 @@ class MakeApiMigrationCommand extends Command
                 return false;
             }
 
-            $fkNames = array_map(fn($col) => str_replace('_id', '', $col['name']), $foreignKeys);
+            $fkNames = array_map(fn($col) => $this->extractForeignTableName($col['name']), $foreignKeys);
             sort($fkNames);
             $expectedName = implode('_', $fkNames);
 
@@ -172,7 +171,7 @@ class MakeApiMigrationCommand extends Command
 
             if ($this->isForeignKey($col)) {
                 if (!isset($col['foreignTable'])) {
-                    $col['foreignTable'] = str_replace('_id', '', $col['name']);
+                    $col['foreignTable'] = $this->extractForeignTableName($col['name']);
                 }
 
                 $foreignKeys[] = $col;
@@ -271,7 +270,7 @@ class MakeApiMigrationCommand extends Command
 
         $line = "            \$table->{$type}('{$name}')";
 
-        if (!($col['required'] ?? false)) {
+        if (!$this->isRequired($col)) {
             $line .= "->nullable()";
         }
 

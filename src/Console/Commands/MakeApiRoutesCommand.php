@@ -5,9 +5,12 @@ namespace LaravelArchitect\Console\Commands;
 use Illuminate\Console\Command;
 use Illuminate\Filesystem\Filesystem;
 use Illuminate\Support\Str;
+use LaravelArchitect\Console\Commands\Traits\SchemaParserTrait;
 
 class MakeApiRoutesCommand extends Command
 {
+    use SchemaParserTrait;
+
     protected $signature = 'make:api-routes {name} {--soft-deletes}';
     protected $description = 'Add API resource routes to routes/api.php';
 
@@ -15,7 +18,7 @@ class MakeApiRoutesCommand extends Command
     {
         $name = $this->argument('name');
         $hasSoftDeletes = $this->option('soft-deletes');
-        $className = Str::studly($name);
+        $className = $this->studly($name);
         $routeName = Str::snake(Str::pluralStudly($name));
 
         $apiRoutesPath = base_path(config('api_scaffolding.paths.routes'));

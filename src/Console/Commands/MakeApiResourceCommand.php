@@ -18,11 +18,8 @@ class MakeApiResourceCommand extends Command
     {
         $name = $this->argument('name');
         $schema = $this->parseSchema($this->option('schema'));
-        $className = Str::studly($name);
+        $className = $this->studly($name);
         $namespace = config('api_scaffolding.namespaces.resources');
-
-        $resourcePath = base_path(config('api_scaffolding.paths.resources'));
-        $files->ensureDirectoryExists($resourcePath);
 
         $this->createResource($files, $className, $namespace, $schema);
         $this->createResourceCollection($files, $className, $namespace);
@@ -43,7 +40,7 @@ class MakeApiResourceCommand extends Command
         );
 
         $path = base_path(config('api_scaffolding.paths.resources') . '/' . $className . 'Resource.php');
-        $files->put($path, $content);
+        $this->writeFile($files, $path, $content);
     }
 
     protected function createResourceCollection(Filesystem $files, string $className, string $namespace): void
@@ -56,7 +53,7 @@ class MakeApiResourceCommand extends Command
         );
 
         $path = base_path(config('api_scaffolding.paths.resources') . '/' . $className . 'Collection.php');
-        $files->put($path, $content);
+        $this->writeFile($files, $path, $content);
     }
 
     protected function buildResourceFields(array $schema): string
@@ -82,9 +79,9 @@ class MakeApiResourceCommand extends Command
 
         foreach ($schema as $col) {
             if ($this->isForeignKey($col)) {
-                $tableName = str_replace('_id', '', $col['name']);
+                $tableName = $this->extractForeignTableName($col['name']);
                 $relationName = $this->camel($tableName);
-                $resourceClass = Str::studly($tableName) . 'Resource';
+                $resourceClass = $this->getForeignModelName($col['name']) . 'Resource';
 
                 $relationships[] = "            '{$relationName}' => new \\{$resourceNamespace}\\{$resourceClass}(\$this->whenLoaded('{$relationName}'))";
             }

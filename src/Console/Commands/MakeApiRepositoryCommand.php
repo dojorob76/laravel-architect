@@ -19,8 +19,8 @@ class MakeApiRepositoryCommand extends Command
         $name = $this->argument('name');
         $driver = $this->option('driver');
         $compositeUnique = $this->parseCompositeUnique($this->option('composite-unique'));
-        $className = Str::studly($name);
-        $tableName = $this->snake($this->pluralize($name));
+        $className = $this->studly($name);
+        $tableName = $this->getTableName($name);
 
         $namespace = config('api_scaffolding.namespaces.repositories');
         $interfaceNamespace = config('api_scaffolding.namespaces.repository_interfaces');
@@ -52,7 +52,6 @@ class MakeApiRepositoryCommand extends Command
     protected function createInterface(Filesystem $files, string $className, string $namespace): void
     {
         $interfacePath = base_path(config('api_scaffolding.paths.repository_interfaces'));
-        $files->ensureDirectoryExists($interfacePath);
 
         $stub = $this->getStub('repository_interface');
         $content = str_replace(
@@ -61,13 +60,13 @@ class MakeApiRepositoryCommand extends Command
             $stub
         );
 
-        $files->put("{$interfacePath}/{$className}RepositoryInterface.php", $content);
+        $path = "{$interfacePath}/{$className}RepositoryInterface.php";
+        $this->writeFile($files, $path, $content);
     }
 
     protected function createEloquentRepository(Filesystem $files, string $className, string $namespace, string $interfaceNamespace, string $modelNamespace): void
     {
         $repoPath = base_path(config('api_scaffolding.paths.repositories'));
-        $files->ensureDirectoryExists($repoPath);
 
         $stub = $this->getStub('repository_eloquent');
         $content = str_replace(
@@ -76,13 +75,13 @@ class MakeApiRepositoryCommand extends Command
             $stub
         );
 
-        $files->put("{$repoPath}/Eloquent{$className}Repository.php", $content);
+        $path = "{$repoPath}/Eloquent{$className}Repository.php";
+        $this->writeFile($files, $path, $content);
     }
 
     protected function createMySQLRepository(Filesystem $files, string $className, string $namespace, string $interfaceNamespace, string $modelNamespace, string $tableName): void
     {
         $repoPath = base_path(config('api_scaffolding.paths.repositories'));
-        $files->ensureDirectoryExists($repoPath);
 
         $stub = $this->getStub('repository_mysql');
         $content = str_replace(
@@ -91,13 +90,13 @@ class MakeApiRepositoryCommand extends Command
             $stub
         );
 
-        $files->put("{$repoPath}/MySQL{$className}Repository.php", $content);
+        $path = "{$repoPath}/MySQL{$className}Repository.php";
+        $this->writeFile($files, $path, $content);
     }
 
     protected function createPostgresRepository(Filesystem $files, string $className, string $namespace, string $interfaceNamespace, string $modelNamespace, string $tableName): void
     {
         $repoPath = base_path(config('api_scaffolding.paths.repositories'));
-        $files->ensureDirectoryExists($repoPath);
 
         $stub = $this->getStub('repository_postgres');
         $content = str_replace(
@@ -106,6 +105,7 @@ class MakeApiRepositoryCommand extends Command
             $stub
         );
 
-        $files->put("{$repoPath}/Postgres{$className}Repository.php", $content);
+        $path = "{$repoPath}/Postgres{$className}Repository.php";
+        $this->writeFile($files, $path, $content);
     }
 }

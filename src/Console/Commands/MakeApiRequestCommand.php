@@ -19,7 +19,7 @@ class MakeApiRequestCommand extends Command
         $name = $this->argument('name');
         $schema = $this->parseSchema($this->option('schema'));
         $compositeUnique = $this->parseCompositeUnique($this->option('composite-unique'));
-        $className = Str::studly($name);
+        $className = $this->studly($name);
         $namespace = config('api_scaffolding.namespaces.requests');
 
         [$rulesStr, $patchRulesStr] = $this->buildValidationRules($schema, $compositeUnique, $name);
@@ -32,8 +32,7 @@ class MakeApiRequestCommand extends Command
         );
 
         $path = base_path(config('api_scaffolding.paths.requests') . "/{$className}Request.php");
-        $files->ensureDirectoryExists(dirname($path));
-        $files->put($path, $content);
+        $this->writeFile($files, $path, $content);
 
         $this->info("Form Request created: {$className}Request");
     }
@@ -89,7 +88,7 @@ class MakeApiRequestCommand extends Command
     {
         $rules = [];
 
-        if ($col['required'] ?? false) {
+        if ($this->isRequired($col)) {
             $rules[] = 'required';
         } else {
             $rules[] = 'nullable';
@@ -106,7 +105,7 @@ class MakeApiRequestCommand extends Command
         if ($this->isForeignKey($col)) {
             $foreignTable = isset($col['foreignTable'])
                 ? $this->snake($this->pluralize($col['foreignTable']))
-                : $this->snake($this->pluralize(str_replace('_id', '', $col['name'])));
+                : $this->getForeignTableNamePluralized($col['name']);
 
             $rules[] = "exists:{$foreignTable},id";
         }

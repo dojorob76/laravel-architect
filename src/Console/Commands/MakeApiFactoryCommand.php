@@ -19,7 +19,7 @@ class MakeApiFactoryCommand extends Command
         $name = $this->argument('name');
         $schema = $this->parseSchema($this->option('schema'));
         $compositeUnique = $this->parseCompositeUnique($this->option('composite-unique'));
-        $className = Str::studly($name);
+        $className = $this->studly($name);
         $namespace = config('api_scaffolding.namespaces.factories');
         $modelNamespace = config('api_scaffolding.namespaces.models');
 
@@ -33,8 +33,7 @@ class MakeApiFactoryCommand extends Command
         );
 
         $path = base_path(config('api_scaffolding.paths.factories') . "/{$className}Factory.php");
-        $files->ensureDirectoryExists(dirname($path));
-        $files->put($path, $content);
+        $this->writeFile($files, $path, $content);
 
         $this->info("Factory created: {$className}Factory");
     }
@@ -84,8 +83,7 @@ class MakeApiFactoryCommand extends Command
         $type = $col['type'] ?? 'string';
 
         if ($this->isForeignKey($col)) {
-            $tableName = str_replace('_id', '', $col['name']);
-            $foreignModel = Str::studly($tableName);
+            $foreignModel = $this->getForeignModelName($col['name']);
             $modelNamespace = config('api_scaffolding.namespaces.models');
             return "\\{$modelNamespace}\\{$foreignModel}::factory()";
         }
