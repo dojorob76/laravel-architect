@@ -21,8 +21,8 @@ class MakeApiModelCommand extends Command
         $isPivot = $this->option('pivot') === 'true';
 
         $className = Str::studly($name);
-        $tableName = $isPivot ? $this->snake($name) : $this->snake($this->pluralize($name));
-        $namespace = config('api_scaffolding.namespaces.models');
+        $tableName = $this->getTableName($name, $isPivot);
+        $namespace = $this->getNamespace('models');
 
         $fillable = $this->buildFillableArray($schema);
         $relationships = $this->buildRelationships($schema, $namespace);
@@ -61,9 +61,8 @@ class MakeApiModelCommand extends Command
             $stub
         );
 
-        $path = base_path(config('api_scaffolding.paths.models') . "/{$className}.php");
-        $files->ensureDirectoryExists(dirname($path));
-        $files->put($path, $content);
+        $path = $this->getPath('models') . "/{$className}.php";
+        $this->writeFile($files, $path, $content);
 
         $this->info("Model created: {$className}");
     }
@@ -83,7 +82,7 @@ class MakeApiModelCommand extends Command
         $relationships = [];
 
         foreach ($schema as $col) {
-            if (($col['isForeignKey'] ?? false) || str_ends_with($col['name'], '_id')) {
+            if ($this->isForeignKey($col)) {
                 $relationships[] = $this->buildBelongsToRelationship($col, $namespace);
             }
         }
@@ -98,9 +97,9 @@ class MakeApiModelCommand extends Command
     protected function buildBelongsToRelationship(array $col, string $namespace): string
     {
         $foreignKeyName = $col['name'];
-        $tableName = str_replace('_id', '', $foreignKeyName);
-        $methodName = $this->camel($tableName);
-        $modelName = Str::studly($tableName);
+        $tableName = $this->extractForeignTableName($foreignKeyName);
+        $methodName = Str::camel($tableName);
+        $modelName = $this->getForeignModelName($foreignKeyName);
 
         return <<<PHP
 

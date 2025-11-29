@@ -47,8 +47,7 @@ class MakeApiControllerCommand extends Command
         );
 
         $path = base_path(config('api_scaffolding.paths.controllers') . "/{$className}Controller.php");
-        $files->ensureDirectoryExists(dirname($path));
-        $files->put($path, $content);
+        $this->writeFile($files, $path, $content);
 
         $this->info("Controller created: {$className}Controller");
     }

@@ -33,8 +33,7 @@ class MakeApiFactoryCommand extends Command
         );
 
         $path = base_path(config('api_scaffolding.paths.factories') . "/{$className}Factory.php");
-        $files->ensureDirectoryExists(dirname($path));
-        $files->put($path, $content);
+        $this->writeFile($files, $path, $content);
 
         $this->info("Factory created: {$className}Factory");
     }
@@ -83,9 +82,8 @@ class MakeApiFactoryCommand extends Command
     {
         $type = $col['type'] ?? 'string';
 
-        if (($col['isForeignKey'] ?? false) || str_ends_with($col['name'], '_id')) {
-            $tableName = str_replace('_id', '', $col['name']);
-            $foreignModel = Str::studly($tableName);
+        if ($this->isForeignKey($col)) {
+            $foreignModel = $this->getForeignModelName($col['name']);
             $modelNamespace = config('api_scaffolding.namespaces.models');
             return "\\{$modelNamespace}\\{$foreignModel}::factory()";
         }

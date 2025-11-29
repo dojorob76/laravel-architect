@@ -21,9 +21,6 @@ class MakeApiResourceCommand extends Command
         $className = Str::studly($name);
         $namespace = config('api_scaffolding.namespaces.resources');
 
-        $resourcePath = base_path(config('api_scaffolding.paths.resources'));
-        $files->ensureDirectoryExists($resourcePath);
-
         $this->createResource($files, $className, $namespace, $schema);
         $this->createResourceCollection($files, $className, $namespace);
 
@@ -43,7 +40,7 @@ class MakeApiResourceCommand extends Command
         );
 
         $path = base_path(config('api_scaffolding.paths.resources') . '/' . $className . 'Resource.php');
-        $files->put($path, $content);
+        $this->writeFile($files, $path, $content);
     }
 
     protected function createResourceCollection(Filesystem $files, string $className, string $namespace): void
@@ -56,7 +53,7 @@ class MakeApiResourceCommand extends Command
         );
 
         $path = base_path(config('api_scaffolding.paths.resources') . '/' . $className . 'Collection.php');
-        $files->put($path, $content);
+        $this->writeFile($files, $path, $content);
     }
 
     protected function buildResourceFields(array $schema): string
@@ -67,7 +64,7 @@ class MakeApiResourceCommand extends Command
 
         $fields = [];
         foreach ($schema as $col) {
-            if (!($col['isForeignKey'] ?? false) && !str_ends_with($col['name'], '_id')) {
+            if (!$this->isForeignKey($col)) {
                 $fields[] = "            '{$col['name']}' => \$this->{$col['name']}";
             }
         }
@@ -81,10 +78,10 @@ class MakeApiResourceCommand extends Command
         $resourceNamespace = config('api_scaffolding.namespaces.resources');
 
         foreach ($schema as $col) {
-            if (($col['isForeignKey'] ?? false) || str_ends_with($col['name'], '_id')) {
-                $tableName = str_replace('_id', '', $col['name']);
-                $relationName = $this->camel($tableName);
-                $resourceClass = Str::studly($tableName) . 'Resource';
+            if ($this->isForeignKey($col)) {
+                $tableName = $this->extractForeignTableName($col['name']);
+                $relationName = Str::camel($tableName);
+                $resourceClass = $this->getForeignModelName($col['name']) . 'Resource';
 
                 $relationships[] = "            '{$relationName}' => new \\{$resourceNamespace}\\{$resourceClass}(\$this->whenLoaded('{$relationName}'))";
             }

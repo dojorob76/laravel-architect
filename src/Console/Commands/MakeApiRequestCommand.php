@@ -32,8 +32,7 @@ class MakeApiRequestCommand extends Command
         );
 
         $path = base_path(config('api_scaffolding.paths.requests') . "/{$className}Request.php");
-        $files->ensureDirectoryExists(dirname($path));
-        $files->put($path, $content);
+        $this->writeFile($files, $path, $content);
 
         $this->info("Form Request created: {$className}Request");
     }
@@ -61,7 +60,7 @@ class MakeApiRequestCommand extends Command
 
         // Add composite unique validation rules
         if (!empty($compositeUnique)) {
-            $tableName = $this->snake($this->pluralize($modelName));
+            $tableName = Str::snake(Str::plural($modelName));
             foreach ($compositeUnique as $index => $columns) {
                 $compositeRuleName = 'composite_unique_' . $index;
                 $columnsStr = implode(',', $columns);
@@ -69,8 +68,8 @@ class MakeApiRequestCommand extends Command
                 // Composite unique validation for: {$columnsStr}
                 \$query = \\DB::table('{$tableName}');
                 " . implode("\n                ", array_map(fn($col) => "\$query->where('{$col}', \$this->input('{$col}'));", $columns)) . "
-                if (\$this->route('" . $this->camel($modelName) . "')) {
-                    \$query->where('id', '!=', \$this->route('" . $this->camel($modelName) . "')->id ?? \$this->route('" . $this->camel($modelName) . "'));
+                if (\$this->route('" . Str::camel($modelName) . "')) {
+                    \$query->where('id', '!=', \$this->route('" . Str::camel($modelName) . "')->id ?? \$this->route('" . Str::camel($modelName) . "'));
                 }
                 if (\$query->exists()) {
                     \$fail('The combination of " . implode(', ', $columns) . " has already been taken.');
@@ -89,7 +88,7 @@ class MakeApiRequestCommand extends Command
     {
         $rules = [];
 
-        if ($col['required'] ?? false) {
+        if ($this->isRequired($col)) {
             $rules[] = 'required';
         } else {
             $rules[] = 'nullable';
@@ -99,14 +98,14 @@ class MakeApiRequestCommand extends Command
         $rules = array_merge($rules, $this->getTypeValidationRules($type));
 
         if ($col['unique'] ?? false) {
-            $tableName = $this->snake($this->pluralize($col['table'] ?? 'table'));
+            $tableName = Str::snake(Str::plural($col['table'] ?? 'table'));
             $rules[] = 'unique:' . $tableName . ',' . $col['name'];
         }
 
-        if (($col['isForeignKey'] ?? false) || str_ends_with($col['name'], '_id')) {
+        if ($this->isForeignKey($col)) {
             $foreignTable = isset($col['foreignTable'])
-                ? $this->snake($this->pluralize($col['foreignTable']))
-                : $this->snake($this->pluralize(str_replace('_id', '', $col['name'])));
+                ? Str::snake(Str::plural($col['foreignTable']))
+                : $this->getForeignTableNamePluralized($col['name']);
 
             $rules[] = "exists:{$foreignTable},id";
         }

@@ -29,8 +29,7 @@ class MakeApiServiceCommand extends Command
         );
 
         $path = base_path(config('api_scaffolding.paths.services') . "/{$className}Service.php");
-        $files->ensureDirectoryExists(dirname($path));
-        $files->put($path, $content);
+        $this->writeFile($files, $path, $content);
 
         $this->info("Service created: {$className}Service");
     }

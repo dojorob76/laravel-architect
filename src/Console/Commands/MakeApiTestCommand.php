@@ -23,9 +23,9 @@ class MakeApiTestCommand extends Command
         $compositeUnique = $this->parseCompositeUnique($this->option('composite-unique'));
 
         $className = Str::studly($name);
-        $route = $this->snake($this->pluralize($name));
-        $singularRoute = $this->snake($name);
-        $table = $this->snake($this->pluralize($name));
+        $route = $this->getTableName($name);
+        $singularRoute = Str::snake($name);
+        $table = $this->getTableName($name);
         $modelNamespace = config('api_scaffolding.namespaces.models');
 
         $testData = $this->buildTestData($schema);
@@ -90,8 +90,7 @@ class MakeApiTestCommand extends Command
         );
 
         $path = base_path(config('api_scaffolding.paths.tests') . "/{$className}Test.php");
-        $files->ensureDirectoryExists(dirname($path));
-        $files->put($path, $content);
+        $this->writeFile($files, $path, $content);
 
         $this->info("PEST test created: {$className}Test");
     }
@@ -121,7 +120,7 @@ class MakeApiTestCommand extends Command
 
         $data = [];
         foreach ($schema as $col) {
-            if (!($col['isForeignKey'] ?? false) && !str_ends_with($col['name'], '_id') && $col['name'] !== 'tenant_id') {
+            if (!$this->isForeignKey($col) && $col['name'] !== 'tenant_id') {
                 $value = $this->generateTestValue($col, true);
                 $data[] = "        '{$col['name']}' => {$value}";
                 break;
@@ -139,7 +138,7 @@ class MakeApiTestCommand extends Command
 
         $data = [];
         foreach ($schema as $col) {
-            if ($col['required'] ?? false) {
+            if ($this->isRequired($col)) {
                 $invalidValue = match($col['type'] ?? 'string') {
                     'integer', 'unsignedBigInteger' => "'not-a-number'",
                     'boolean' => "'not-a-boolean'",
@@ -157,7 +156,7 @@ class MakeApiTestCommand extends Command
     protected function buildTestPartialUpdate(array $schema): string
     {
         foreach ($schema as $col) {
-            if (!($col['isForeignKey'] ?? false) && !str_ends_with($col['name'], '_id') && $col['name'] !== 'tenant_id') {
+            if (!$this->isForeignKey($col) && $col['name'] !== 'tenant_id') {
                 $value = $this->generateTestValue($col, true);
                 return "        '{$col['name']}' => {$value}";
             }
@@ -186,7 +185,7 @@ class MakeApiTestCommand extends Command
     protected function buildTestBatchUpdateField(array $schema): string
     {
         foreach ($schema as $col) {
-            if (!($col['isForeignKey'] ?? false) && !str_ends_with($col['name'], '_id') && $col['name'] !== 'tenant_id') {
+            if (!$this->isForeignKey($col) && $col['name'] !== 'tenant_id') {
                 $value = $this->generateTestValue($col, true);
                 return "                '{$col['name']}' => {$value}";
             }
@@ -199,7 +198,7 @@ class MakeApiTestCommand extends Command
     {
         $required = [];
         foreach ($schema as $col) {
-            if (($col['required'] ?? false) && $col['name'] !== 'tenant_id') {
+            if ($this->isRequired($col) && $col['name'] !== 'tenant_id') {
                 $required[] = "            '{$col['name']}'";
             }
         }
@@ -325,9 +324,8 @@ PHP;
     {
         $type = $col['type'] ?? 'string';
 
-        if (($col['isForeignKey'] ?? false) || str_ends_with($col['name'], '_id')) {
-            $tableName = str_replace('_id', '', $col['name']);
-            $foreignModel = Str::studly($tableName);
+        if ($this->isForeignKey($col)) {
+            $foreignModel = $this->getForeignModelName($col['name']);
             return "{$foreignModel}::factory()->create()->id";
         }
 
