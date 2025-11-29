@@ -6,9 +6,9 @@ use Illuminate\Console\Command;
 
 class MakeApiBundleCommand extends Command
 {
-    protected $signature = 'make:api-bundle {name} 
-                            {--schema=} 
-                            {--soft-deletes} 
+    protected $signature = 'make:api-bundle {name}
+                            {--schema=}
+                            {--soft-deletes}
                             {--multi-tenant}
                             {--composite-unique=}
                             {--driver=eloquent : Repository driver (eloquent|mysql|postgres|all)}';
@@ -24,12 +24,48 @@ class MakeApiBundleCommand extends Command
         $compositeUnique = $this->option('composite-unique');
         $driver = $this->option('driver');
 
-        $args = [
+        // Args for migration (includes composite-unique)
+        $migrationArgs = [
             'name' => $name,
             '--schema' => $schema,
             '--soft-deletes' => $softDeletes,
             '--multi-tenant' => $multiTenant,
             '--composite-unique' => $compositeUnique,
+        ];
+
+        // Args for model (soft-deletes + multi-tenant)
+        $modelArgs = [
+            'name' => $name,
+            '--schema' => $schema,
+            '--soft-deletes' => $softDeletes,
+            '--multi-tenant' => $multiTenant,
+        ];
+
+        // Args for test (soft-deletes + multi-tenant + composite-unique)
+        $testArgs = [
+            'name' => $name,
+            '--schema' => $schema,
+            '--soft-deletes' => $softDeletes,
+            '--multi-tenant' => $multiTenant,
+            '--composite-unique' => $compositeUnique,
+        ];
+
+        // Args for factory, request, repository (schema + composite-unique)
+        $schemaCompositeArgs = [
+            'name' => $name,
+            '--schema' => $schema,
+            '--composite-unique' => $compositeUnique,
+        ];
+
+        // Args for routes (only soft-deletes)
+        $routesArgs = [
+            'name' => $name,
+            '--soft-deletes' => $softDeletes,
+        ];
+
+        // Args for commands with just name
+        $nameOnlyArgs = [
+            'name' => $name,
         ];
 
         $this->info("🚀 Scaffolding API bundle for: {$name}");
@@ -45,7 +81,7 @@ class MakeApiBundleCommand extends Command
         $this->newLine();
 
         $this->info('📝 Creating migration...');
-        $exitCode = $this->call('make:api-migration', $args);
+        $exitCode = $this->call('make:api-migration', $migrationArgs);
 
         if ($exitCode !== 0) {
             $this->error("Bundle generation stopped due to migration errors.");
@@ -53,34 +89,31 @@ class MakeApiBundleCommand extends Command
         }
 
         $this->info('📦 Creating model...');
-        $this->call('make:api-model', $args);
+        $this->call('make:api-model', $modelArgs);
 
         $this->info('🏭 Creating factory...');
-        $this->call('make:api-factory', ['name' => $name, '--schema' => $schema]);
+        $this->call('make:api-factory', $schemaCompositeArgs);
 
         $this->info('🗄️  Creating repositories...');
-        $this->call('make:api-repository', array_merge($args, ['--driver' => $driver]));
+        $this->call('make:api-repository', array_merge($schemaCompositeArgs, ['--driver' => $driver]));
 
         $this->info('⚙️  Creating service...');
-        $this->call('make:api-service', ['name' => $name]);
+        $this->call('make:api-service', $nameOnlyArgs);
 
         $this->info('✅ Creating form request...');
-        $this->call('make:api-request', $args);
+        $this->call('make:api-request', $schemaCompositeArgs);
 
         $this->info('🎨 Creating API resources...');
         $this->call('make:api-resource', ['name' => $name, '--schema' => $schema]);
 
         $this->info('🎮 Creating controller...');
-        $this->call('make:api-controller', ['name' => $name]);
+        $this->call('make:api-controller', $nameOnlyArgs);
 
         $this->info('🧪 Creating tests...');
-        $this->call('make:api-test', $args);
+        $this->call('make:api-test', $testArgs);
 
         $this->info('🛣️  Adding routes...');
-        $this->call('make:api-routes', [
-            'name' => $name,
-            '--soft-deletes' => $softDeletes
-        ]);
+        $this->call('make:api-routes', $routesArgs);
 
         $this->newLine();
         $this->info("✨ Bundle scaffolding complete for {$name}!");

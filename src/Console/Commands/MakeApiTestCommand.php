@@ -11,7 +11,7 @@ class MakeApiTestCommand extends Command
 {
     use SchemaParserTrait;
 
-    protected $signature = 'make:api-test {name} {--schema=} {--soft-deletes} {--multi-tenant}';
+    protected $signature = 'make:api-test {name} {--schema=} {--soft-deletes} {--multi-tenant} {--composite-unique=}';
     protected $description = 'Create PEST tests for API resource';
 
     public function handle(Filesystem $files): void
@@ -20,6 +20,7 @@ class MakeApiTestCommand extends Command
         $schema = $this->parseSchema($this->option('schema'));
         $softDeletes = $this->option('soft-deletes');
         $multiTenant = $this->option('multi-tenant');
+        $compositeUnique = $this->parseCompositeUnique($this->option('composite-unique'));
 
         $className = Str::studly($name);
         $route = $this->snake($this->pluralize($name));

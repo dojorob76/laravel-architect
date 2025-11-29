@@ -57,25 +57,6 @@ class MakeApiMigrationCommand extends Command
         }
     }
 
-    protected function parseCompositeUnique(?string $compositeUniqueJson): array
-    {
-        if (!$compositeUniqueJson) {
-            return [];
-        }
-
-        $parsed = json_decode($compositeUniqueJson, true);
-
-        if (!is_array($parsed)) {
-            return [];
-        }
-
-        if (!empty($parsed) && !is_array($parsed[0])) {
-            return [$parsed];
-        }
-
-        return $parsed;
-    }
-
     protected function extractForeignKeys(array $schema): array
     {
         return array_filter($schema, fn($col) => $this->isForeignKey($col));
@@ -259,7 +240,7 @@ class MakeApiMigrationCommand extends Command
         }
 
         if ($index > 0) {
-            $suffix = chr(97 + $index);
+            $suffix = chr(96 + $index);  // 96 + 1 = 97 ('a'), 96 + 2 = 98 ('b'), etc.
             $baseName .= "_{$suffix}";
         }
 
@@ -276,10 +257,10 @@ class MakeApiMigrationCommand extends Command
             $columnsList = implode(', ', $columns);
 
             $this->comment("   • {$indexName}: [{$columnsList}]");
+        }
 
-            if ($index > 0 || count($compositeUnique) > 1) {
-                $this->warn("   ⚠️  Multiple composite unique keys detected - using suffix notation (_a, _b, etc.)");
-            }
+        if (count($compositeUnique) > 1) {
+            $this->warn("⚠️  Multiple composite unique keys detected - using suffix notation (_a, _b, etc.)");
         }
     }
 

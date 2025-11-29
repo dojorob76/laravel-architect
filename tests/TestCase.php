@@ -1,12 +1,10 @@
 <?php
 
-namespace tests;
+namespace LaravelArchitect\Tests;
 
 use Illuminate\Support\Facades\File;
 use LaravelArchitect\LaravelArchitectServiceProvider;
 use Orchestra\Testbench\TestCase as Orchestra;
-use function LaravelArchitect\Tests\base_path;
-use function LaravelArchitect\Tests\config;
 
 class TestCase extends Orchestra
 {
@@ -33,12 +31,47 @@ class TestCase extends Orchestra
 
     protected function getEnvironmentSetUp($app): void
     {
-        $app['config']->set('database.default', 'testbench');
-        $app['config']->set('database.connections.testbench', [
-            'driver'   => 'sqlite',
-            'database' => ':memory:',
-            'prefix'   => '',
-        ]);
+        // Determine which database to use based on environment variable
+        $connection = env('DB_CONNECTION', 'testbench');
+
+        if ($connection === 'mysql') {
+            $app['config']->set('database.default', 'mysql');
+            $app['config']->set('database.connections.mysql', [
+                'driver'   => 'mysql',
+                'host'     => env('DB_HOST', 'mysql'),
+                'port'     => env('DB_PORT', '3306'),
+                'database' => env('DB_DATABASE', 'laravel_architect_test'),
+                'username' => env('DB_USERNAME', 'laravel'),
+                'password' => env('DB_PASSWORD', 'secret'),
+                'charset'  => 'utf8mb4',
+                'collation' => 'utf8mb4_unicode_ci',
+                'prefix'   => '',
+                'strict'   => true,
+                'engine'   => null,
+            ]);
+        } elseif ($connection === 'pgsql') {
+            $app['config']->set('database.default', 'pgsql');
+            $app['config']->set('database.connections.pgsql', [
+                'driver'   => 'pgsql',
+                'host'     => env('DB_HOST', 'postgres'),
+                'port'     => env('DB_PORT', '5432'),
+                'database' => env('DB_DATABASE', 'laravel_architect_test'),
+                'username' => env('DB_USERNAME', 'laravel'),
+                'password' => env('DB_PASSWORD', 'secret'),
+                'charset'  => 'utf8',
+                'prefix'   => '',
+                'schema'   => 'public',
+                'sslmode'  => 'prefer',
+            ]);
+        } else {
+            // Default to SQLite in-memory (existing configuration)
+            $app['config']->set('database.default', 'testbench');
+            $app['config']->set('database.connections.testbench', [
+                'driver'   => 'sqlite',
+                'database' => ':memory:',
+                'prefix'   => '',
+            ]);
+        }
 
         $app['config']->set('api_scaffolding', [
             'paths' => [

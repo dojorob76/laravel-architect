@@ -11,13 +11,14 @@ class MakeApiRepositoryCommand extends Command
 {
     use SchemaParserTrait;
 
-    protected $signature = 'make:api-repository {name} {--schema=} {--driver=eloquent}';
+    protected $signature = 'make:api-repository {name} {--schema=} {--driver=eloquent} {--composite-unique=}';
     protected $description = 'Create repository interface and implementations (eloquent|mysql|postgres|all)';
 
     public function handle(Filesystem $files): void
     {
         $name = $this->argument('name');
         $driver = $this->option('driver');
+        $compositeUnique = $this->parseCompositeUnique($this->option('composite-unique'));
         $className = Str::studly($name);
         $tableName = $this->snake($this->pluralize($name));
 
