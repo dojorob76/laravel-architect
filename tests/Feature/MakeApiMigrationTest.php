@@ -150,6 +150,17 @@ test('pivot migration has no timestamps and has composite primary key', function
 });
 
 test('creates composite unique constraint', function () {
+    // First create the Tenant model and migration
+    Artisan::call('make:api-model', [
+        'name' => 'Tenant',
+        '--schema' => json_encode([['name' => 'name', 'type' => 'string']])
+    ]);
+
+    Artisan::call('make:api-migration', [
+        'name' => 'Tenant',
+        '--schema' => json_encode([['name' => 'name', 'type' => 'string']])
+    ]);
+
     $schema = json_encode([
         ['name' => 'email', 'type' => 'string', 'required' => true],
         ['name' => 'tenant_id', 'type' => 'unsignedBigInteger', 'required' => true],

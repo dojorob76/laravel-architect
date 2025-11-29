@@ -1,0 +1,76 @@
+version: '3.8'
+
+services:
+  # PHP 8.4 CLI Container for Package Development
+  php:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: laravel_architect_php
+    volumes:
+      - .:/var/www:delegated
+      - ./vendor:/var/www/vendor:delegated
+    working_dir: /var/www
+    environment:
+      - PHP_IDE_CONFIG=serverName=Docker
+    networks:
+      - laravel_architect
+    depends_on:
+      mysql:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    command: tail -f /dev/null
+
+  # MySQL 8.0 for MySQL Repository Testing
+  mysql:
+    image: mysql:8.0
+    container_name: laravel_architect_mysql
+    ports:
+      - "33060:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: laravel_architect_test
+      MYSQL_USER: laravel
+      MYSQL_PASSWORD: secret
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./docker/mysql/init:/docker-entrypoint-initdb.d
+    networks:
+      - laravel_architect
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-proot"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # PostgreSQL for Postgres Repository Testing
+  postgres:
+    image: postgres:16-alpine
+    container_name: laravel_architect_postgres
+    ports:
+      - "54320:5432"
+    environment:
+      POSTGRES_DB: laravel_architect_test
+      POSTGRES_USER: laravel
+      POSTGRES_PASSWORD: secret
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./docker/postgres/init:/docker-entrypoint-initdb.d
+    networks:
+      - laravel_architect
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U laravel"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+networks:
+  laravel_architect:
+    driver: bridge
+
+volumes:
+  mysql_data:
+    driver: local
+  postgres_data:
+    driver: local

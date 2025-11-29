@@ -58,6 +58,27 @@ test('bundle with soft deletes includes soft delete features', function () {
 });
 
 test('pivot bundle does not create service or controller', function () {
+    // First create the Tag and Video models/migrations
+    Artisan::call('make:api-model', [
+        'name' => 'Tag',
+        '--schema' => json_encode([['name' => 'name', 'type' => 'string']])
+    ]);
+
+    Artisan::call('make:api-migration', [
+        'name' => 'Tag',
+        '--schema' => json_encode([['name' => 'name', 'type' => 'string']])
+    ]);
+
+    Artisan::call('make:api-model', [
+        'name' => 'Video',
+        '--schema' => json_encode([['name' => 'title', 'type' => 'string']])
+    ]);
+
+    Artisan::call('make:api-migration', [
+        'name' => 'Video',
+        '--schema' => json_encode([['name' => 'title', 'type' => 'string']])
+    ]);
+
     $schema = json_encode([
         ['name' => 'tag_id', 'type' => 'unsignedBigInteger', 'isForeignKey' => true, 'foreignTable' => 'tag'],
         ['name' => 'video_id', 'type' => 'unsignedBigInteger', 'isForeignKey' => true, 'foreignTable' => 'video'],

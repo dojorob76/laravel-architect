@@ -11,6 +11,7 @@ Laravel Architect generates production-ready API scaffolding with complete CRUD 
 - [Features](#features)
 - [Requirements](#requirements)
 - [Installation](#installation)
+- [Docker Development Environment](#-docker-development-environment)
 - [Configuration](#configuration)
 - [Coding Standards](#coding-standards)
 - [Usage](#usage)
@@ -108,6 +109,27 @@ Register in `config/app.php`:
     App\Providers\RepositoryServiceProvider::class,
 ],
 ```
+
+---
+
+## 🐳 Docker Development Environment
+
+For a containerized development environment with support for testing all database types (MySQL, PostgreSQL, SQLite), see [DOCKER.md](DOCKER.md).
+
+### Quick Start with Docker
+
+```bash
+# Build and start containers
+./docker.sh build && ./docker.sh up
+
+# Install dependencies
+./docker.sh composer-install
+
+# Run tests with all databases
+./docker.sh test-all
+```
+
+For complete Docker documentation, see [DOCKER.md](DOCKER.md).
 
 ---
 

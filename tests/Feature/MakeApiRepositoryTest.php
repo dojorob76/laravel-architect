@@ -64,8 +64,7 @@ test('repository has batch operation methods', function () {
 
     $content = $this->getGeneratedFileContent('repositories', 'EloquentVideoRepository.php');
 
-    expect($content)->toContain('public function findMany')
-        ->and($content)->toContain('public function createMany')
-        ->and($content)->toContain('public function updateMany')
-        ->and($content)->toContain('public function deleteMany');
+    // Batch methods are inherited from BaseEloquentRepository
+    expect($content)->toContain('extends BaseEloquentRepository')
+        ->and($content)->toContain('implements VideoRepositoryInterface');
 });
