@@ -19,7 +19,7 @@ class MakeApiResourceCommand extends Command
         $name = $this->argument('name');
         $schema = $this->parseSchema($this->option('schema'));
         $className = Str::studly($name);
-        $namespace = config('api_scaffolding.namespaces.resources');
+        $namespace = $this->getNamespace('resources');
 
         $this->createResource($files, $className, $namespace, $schema);
         $this->createResourceCollection($files, $className, $namespace);
@@ -32,27 +32,25 @@ class MakeApiResourceCommand extends Command
         $fields = $this->buildResourceFields($schema);
         $relationships = $this->buildResourceRelationships($schema);
 
-        $stub = $this->getStub('resource');
-        $content = str_replace(
-            ['{{ namespace }}', '{{ class }}', '{{ fields }}', '{{ relationships }}'],
-            [$namespace, $className, $fields, $relationships],
-            $stub
-        );
+        $content = $this->processStub('resource', [
+            'namespace' => $namespace,
+            'class' => $className,
+            'fields' => $fields,
+            'relationships' => $relationships,
+        ]);
 
-        $path = base_path(config('api_scaffolding.paths.resources') . '/' . $className . 'Resource.php');
+        $path = $this->getResourcePath($className, 'Resource');
         $this->writeFile($files, $path, $content);
     }
 
     protected function createResourceCollection(Filesystem $files, string $className, string $namespace): void
     {
-        $stub = $this->getStub('resource_collection');
-        $content = str_replace(
-            ['{{ namespace }}', '{{ class }}'],
-            [$namespace, $className],
-            $stub
-        );
+        $content = $this->processStub('resource_collection', [
+            'namespace' => $namespace,
+            'class' => $className,
+        ]);
 
-        $path = base_path(config('api_scaffolding.paths.resources') . '/' . $className . 'Collection.php');
+        $path = $this->getResourcePath($className, 'Collection');
         $this->writeFile($files, $path, $content);
     }
 
@@ -75,15 +73,16 @@ class MakeApiResourceCommand extends Command
     protected function buildResourceRelationships(array $schema): string
     {
         $relationships = [];
-        $resourceNamespace = config('api_scaffolding.namespaces.resources');
+        $resourceNamespace = $this->getNamespace('resources');
 
         foreach ($schema as $col) {
             if ($this->isForeignKey($col)) {
                 $tableName = $this->extractForeignTableName($col['name']);
                 $relationName = Str::camel($tableName);
                 $resourceClass = $this->getForeignModelName($col['name']) . 'Resource';
+                $resourceFQN = $this->buildFQN($resourceNamespace, $resourceClass);
 
-                $relationships[] = "            '{$relationName}' => new \\{$resourceNamespace}\\{$resourceClass}(\$this->whenLoaded('{$relationName}'))";
+                $relationships[] = "            '{$relationName}' => new {$resourceFQN}(\$this->whenLoaded('{$relationName}'))";
             }
         }
 

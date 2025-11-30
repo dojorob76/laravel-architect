@@ -20,19 +20,17 @@ class MakeApiFactoryCommand extends Command
         $schema = $this->parseSchema($this->option('schema'));
         $compositeUnique = $this->parseCompositeUnique($this->option('composite-unique'));
         $className = Str::studly($name);
-        $namespace = config('api_scaffolding.namespaces.factories');
-        $modelNamespace = config('api_scaffolding.namespaces.models');
 
         $definition = $this->buildDefinition($schema, $compositeUnique);
 
-        $stub = $this->getStub('factory');
-        $content = str_replace(
-            ['{{ namespace }}', '{{ model_namespace }}', '{{ class }}', '{{ definition }}'],
-            [$namespace, $modelNamespace, $className, $definition],
-            $stub
-        );
+        $content = $this->processStub('factory', [
+            'namespace' => $this->getNamespace('factories'),
+            'model_namespace' => $this->getNamespace('models'),
+            'class' => $className,
+            'definition' => $definition,
+        ]);
 
-        $path = base_path(config('api_scaffolding.paths.factories') . "/{$className}Factory.php");
+        $path = $this->getFactoryPath($className);
         $this->writeFile($files, $path, $content);
 
         $this->info("Factory created: {$className}Factory");
@@ -84,8 +82,8 @@ class MakeApiFactoryCommand extends Command
 
         if ($this->isForeignKey($col)) {
             $foreignModel = $this->getForeignModelName($col['name']);
-            $modelNamespace = config('api_scaffolding.namespaces.models');
-            return "\\{$modelNamespace}\\{$foreignModel}::factory()";
+            $modelNamespace = $this->getNamespace('models');
+            return $this->buildFactoryCall($modelNamespace, $foreignModel);
         }
 
         $name = strtolower($col['name']);

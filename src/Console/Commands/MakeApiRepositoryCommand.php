@@ -22,9 +22,9 @@ class MakeApiRepositoryCommand extends Command
         $className = Str::studly($name);
         $tableName = $this->getTableName($name);
 
-        $namespace = config('api_scaffolding.namespaces.repositories');
-        $interfaceNamespace = config('api_scaffolding.namespaces.repository_interfaces');
-        $modelNamespace = config('api_scaffolding.namespaces.models');
+        $namespace = $this->getNamespace('repositories');
+        $interfaceNamespace = $this->getNamespace('repository_interfaces');
+        $modelNamespace = $this->getNamespace('models');
 
         $this->createInterface($files, $className, $interfaceNamespace);
 
@@ -51,61 +51,53 @@ class MakeApiRepositoryCommand extends Command
 
     protected function createInterface(Filesystem $files, string $className, string $namespace): void
     {
-        $interfacePath = base_path(config('api_scaffolding.paths.repository_interfaces'));
+        $content = $this->processStub('repository_interface', [
+            'namespace' => $namespace,
+            'class' => $className,
+        ]);
 
-        $stub = $this->getStub('repository_interface');
-        $content = str_replace(
-            ['{{ namespace }}', '{{ class }}'],
-            [$namespace, $className],
-            $stub
-        );
-
-        $path = "{$interfacePath}/{$className}RepositoryInterface.php";
+        $path = $this->getRepositoryInterfacePath($className);
         $this->writeFile($files, $path, $content);
     }
 
     protected function createEloquentRepository(Filesystem $files, string $className, string $namespace, string $interfaceNamespace, string $modelNamespace): void
     {
-        $repoPath = base_path(config('api_scaffolding.paths.repositories'));
+        $content = $this->processStub('repository_eloquent', [
+            'namespace' => $namespace,
+            'interface_namespace' => $interfaceNamespace,
+            'model_namespace' => $modelNamespace,
+            'class' => $className,
+        ]);
 
-        $stub = $this->getStub('repository_eloquent');
-        $content = str_replace(
-            ['{{ namespace }}', '{{ interface_namespace }}', '{{ model_namespace }}', '{{ class }}'],
-            [$namespace, $interfaceNamespace, $modelNamespace, $className],
-            $stub
-        );
-
-        $path = "{$repoPath}/Eloquent{$className}Repository.php";
+        $path = $this->getRepositoryPath($className, 'Eloquent');
         $this->writeFile($files, $path, $content);
     }
 
     protected function createMySQLRepository(Filesystem $files, string $className, string $namespace, string $interfaceNamespace, string $modelNamespace, string $tableName): void
     {
-        $repoPath = base_path(config('api_scaffolding.paths.repositories'));
+        $content = $this->processStub('repository_mysql', [
+            'namespace' => $namespace,
+            'interface_namespace' => $interfaceNamespace,
+            'model_namespace' => $modelNamespace,
+            'class' => $className,
+            'table' => $tableName,
+        ]);
 
-        $stub = $this->getStub('repository_mysql');
-        $content = str_replace(
-            ['{{ namespace }}', '{{ interface_namespace }}', '{{ model_namespace }}', '{{ class }}', '{{ table }}'],
-            [$namespace, $interfaceNamespace, $modelNamespace, $className, $tableName],
-            $stub
-        );
-
-        $path = "{$repoPath}/MySQL{$className}Repository.php";
+        $path = $this->getRepositoryPath($className, 'MySQL');
         $this->writeFile($files, $path, $content);
     }
 
     protected function createPostgresRepository(Filesystem $files, string $className, string $namespace, string $interfaceNamespace, string $modelNamespace, string $tableName): void
     {
-        $repoPath = base_path(config('api_scaffolding.paths.repositories'));
+        $content = $this->processStub('repository_postgres', [
+            'namespace' => $namespace,
+            'interface_namespace' => $interfaceNamespace,
+            'model_namespace' => $modelNamespace,
+            'class' => $className,
+            'table' => $tableName,
+        ]);
 
-        $stub = $this->getStub('repository_postgres');
-        $content = str_replace(
-            ['{{ namespace }}', '{{ interface_namespace }}', '{{ model_namespace }}', '{{ class }}', '{{ table }}'],
-            [$namespace, $interfaceNamespace, $modelNamespace, $className, $tableName],
-            $stub
-        );
-
-        $path = "{$repoPath}/Postgres{$className}Repository.php";
+        $path = $this->getRepositoryPath($className, 'Postgres');
         $this->writeFile($files, $path, $content);
     }
 }

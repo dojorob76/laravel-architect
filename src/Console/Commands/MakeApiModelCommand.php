@@ -30,38 +30,21 @@ class MakeApiModelCommand extends Command
         $usesSoftDeletes = $this->option('soft-deletes') && !$isPivot;
         $usesMultiTenant = $this->option('multi-tenant') && !$isPivot;
 
-        $stub = $this->getStub('model');
-        $content = str_replace(
-            [
-                '{{ namespace }}',
-                '{{ class }}',
-                '{{ table }}',
-                '{{ fillable }}',
-                '{{ relationships }}',
-                '{{ timestamps }}',
-                '{{ casts }}',
-                '{{ uses_soft_deletes }}',
-                '{{ soft_deletes_trait }}',
-                '{{ uses_multi_tenant }}',
-                '{{ multi_tenant_trait }}'
-            ],
-            [
-                $namespace,
-                $className,
-                $tableName,
-                $fillable,
-                $relationships,
-                $isPivot ? 'false' : 'true',
-                $casts,
-                $usesSoftDeletes ? "use Illuminate\Database\Eloquent\SoftDeletes;\n" : '',
-                $usesSoftDeletes ? "\n    use SoftDeletes;" : '',
-                $usesMultiTenant ? "use LaravelArchitect\\Traits\\MultiTenantTrait;\n" : '',
-                $usesMultiTenant ? "\n    use MultiTenantTrait;" : ''
-            ],
-            $stub
-        );
+        $content = $this->processStub('model', [
+            'namespace' => $namespace,
+            'class' => $className,
+            'table' => $tableName,
+            'fillable' => $fillable,
+            'relationships' => $relationships,
+            'timestamps' => $isPivot ? 'false' : 'true',
+            'casts' => $casts,
+            'uses_soft_deletes' => $usesSoftDeletes ? "use Illuminate\Database\Eloquent\SoftDeletes;\n" : '',
+            'soft_deletes_trait' => $usesSoftDeletes ? "\n    use SoftDeletes;" : '',
+            'uses_multi_tenant' => $usesMultiTenant ? "use LaravelArchitect\\Traits\\MultiTenantTrait;\n" : '',
+            'multi_tenant_trait' => $usesMultiTenant ? "\n    use MultiTenantTrait;" : '',
+        ]);
 
-        $path = $this->getPath('models') . "/{$className}.php";
+        $path = $this->getModelPath($className);
         $this->writeFile($files, $path, $content);
 
         $this->info("Model created: {$className}");
@@ -100,6 +83,7 @@ class MakeApiModelCommand extends Command
         $tableName = $this->extractForeignTableName($foreignKeyName);
         $methodName = Str::camel($tableName);
         $modelName = $this->getForeignModelName($foreignKeyName);
+        $modelFQN = $this->buildFQNClass($namespace, $modelName);
 
         return <<<PHP
 
@@ -108,7 +92,7 @@ class MakeApiModelCommand extends Command
      */
     public function {$methodName}()
     {
-        return \$this->belongsTo(\\{$namespace}\\{$modelName}::class, '{$foreignKeyName}');
+        return \$this->belongsTo({$modelFQN}, '{$foreignKeyName}');
     }
 PHP;
     }

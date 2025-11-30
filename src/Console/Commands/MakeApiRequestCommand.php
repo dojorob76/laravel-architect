@@ -20,18 +20,17 @@ class MakeApiRequestCommand extends Command
         $schema = $this->parseSchema($this->option('schema'));
         $compositeUnique = $this->parseCompositeUnique($this->option('composite-unique'));
         $className = Str::studly($name);
-        $namespace = config('api_scaffolding.namespaces.requests');
 
         [$rulesStr, $patchRulesStr] = $this->buildValidationRules($schema, $compositeUnique, $name);
 
-        $stub = $this->getStub('request');
-        $content = str_replace(
-            ['{{ namespace }}', '{{ class }}', '{{ rules }}', '{{ patch_rules }}'],
-            [$namespace, $className, $rulesStr, $patchRulesStr],
-            $stub
-        );
+        $content = $this->processStub('request', [
+            'namespace' => $this->getNamespace('requests'),
+            'class' => $className,
+            'rules' => $rulesStr,
+            'patch_rules' => $patchRulesStr,
+        ]);
 
-        $path = base_path(config('api_scaffolding.paths.requests') . "/{$className}Request.php");
+        $path = $this->getRequestPath($className);
         $this->writeFile($files, $path, $content);
 
         $this->info("Form Request created: {$className}Request");

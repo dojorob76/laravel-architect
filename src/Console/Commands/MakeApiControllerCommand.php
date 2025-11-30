@@ -19,34 +19,16 @@ class MakeApiControllerCommand extends Command
         $name = $this->argument('name');
         $className = Str::studly($name);
 
-        $namespace = config('api_scaffolding.namespaces.controllers');
-        $baseControllerNamespace = config('api_scaffolding.namespaces.base_controller');
-        $requestNamespace = config('api_scaffolding.namespaces.requests');
-        $serviceNamespace = config('api_scaffolding.namespaces.services');
-        $resourceNamespace = config('api_scaffolding.namespaces.resources');
+        $content = $this->processStub('controller', [
+            'namespace' => $this->getNamespace('controllers'),
+            'base_controller_namespace' => $this->getNamespace('base_controller'),
+            'request_namespace' => $this->getNamespace('requests'),
+            'service_namespace' => $this->getNamespace('services'),
+            'resource_namespace' => $this->getNamespace('resources'),
+            'class' => $className,
+        ]);
 
-        $stub = $this->getStub('controller');
-        $content = str_replace(
-            [
-                '{{ namespace }}',
-                '{{ base_controller_namespace }}',
-                '{{ request_namespace }}',
-                '{{ service_namespace }}',
-                '{{ resource_namespace }}',
-                '{{ class }}'
-            ],
-            [
-                $namespace,
-                $baseControllerNamespace,
-                $requestNamespace,
-                $serviceNamespace,
-                $resourceNamespace,
-                $className
-            ],
-            $stub
-        );
-
-        $path = base_path(config('api_scaffolding.paths.controllers') . "/{$className}Controller.php");
+        $path = $this->getControllerPath($className);
         $this->writeFile($files, $path, $content);
 
         $this->info("Controller created: {$className}Controller");

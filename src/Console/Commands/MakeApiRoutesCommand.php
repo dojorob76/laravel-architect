@@ -21,7 +21,7 @@ class MakeApiRoutesCommand extends Command
         $className = Str::studly($name);
         $routeName = Str::snake(Str::pluralStudly($name));
 
-        $apiRoutesPath = base_path(config('api_scaffolding.paths.routes'));
+        $apiRoutesPath = $this->getPath('routes');
 
         if (!$files->exists($apiRoutesPath)) {
             $this->error('routes/api.php not found!');
@@ -30,7 +30,7 @@ class MakeApiRoutesCommand extends Command
 
         $content = $files->get($apiRoutesPath);
 
-        $controllerNamespace = config('api_scaffolding.namespaces.controllers');
+        $controllerNamespace = $this->getNamespace('controllers');
 
         if (str_contains($content, "'{$routeName}'") || str_contains($content, "{$className}Controller")) {
             $this->warn("Routes for {$className} may already exist in routes/api.php");
