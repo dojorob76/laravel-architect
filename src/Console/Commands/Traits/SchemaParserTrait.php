@@ -168,4 +168,158 @@ trait SchemaParserTrait
     {
         return $col['required'] ?? false;
     }
+
+    /**
+     * Build full file path for a controller.
+     *
+     * @param string $className The class name
+     * @return string The full path
+     */
+    protected function getControllerPath(string $className): string
+    {
+        return $this->getPath('controllers') . "/{$className}Controller.php";
+    }
+
+    /**
+     * Build full file path for a request.
+     *
+     * @param string $className The class name
+     * @return string The full path
+     */
+    protected function getRequestPath(string $className): string
+    {
+        return $this->getPath('requests') . "/{$className}Request.php";
+    }
+
+    /**
+     * Build full file path for a service.
+     *
+     * @param string $className The class name
+     * @return string The full path
+     */
+    protected function getServicePath(string $className): string
+    {
+        return $this->getPath('services') . "/{$className}Service.php";
+    }
+
+    /**
+     * Build full file path for a factory.
+     *
+     * @param string $className The class name
+     * @return string The full path
+     */
+    protected function getFactoryPath(string $className): string
+    {
+        return $this->getPath('factories') . "/{$className}Factory.php";
+    }
+
+    /**
+     * Build full file path for a test.
+     *
+     * @param string $className The class name
+     * @return string The full path
+     */
+    protected function getTestPath(string $className): string
+    {
+        return $this->getPath('tests') . "/{$className}Test.php";
+    }
+
+    /**
+     * Build full file path for a resource.
+     *
+     * @param string $className The class name
+     * @param string $suffix The resource suffix (default: 'Resource')
+     * @return string The full path
+     */
+    protected function getResourcePath(string $className, string $suffix = 'Resource'): string
+    {
+        return $this->getPath('resources') . "/{$className}{$suffix}.php";
+    }
+
+    /**
+     * Build full file path for a repository.
+     *
+     * @param string $className The class name
+     * @param string $prefix The repository prefix (e.g., 'Eloquent', 'MySQL', 'Postgres')
+     * @return string The full path
+     */
+    protected function getRepositoryPath(string $className, string $prefix = 'Eloquent'): string
+    {
+        return $this->getPath('repositories') . "/{$prefix}{$className}Repository.php";
+    }
+
+    /**
+     * Build full file path for a repository interface.
+     *
+     * @param string $className The class name
+     * @return string The full path
+     */
+    protected function getRepositoryInterfacePath(string $className): string
+    {
+        return $this->getPath('repository_interfaces') . "/{$className}RepositoryInterface.php";
+    }
+
+    /**
+     * Build full file path for a migration.
+     *
+     * @param string $filename The migration filename
+     * @return string The full path
+     */
+    protected function getMigrationPath(string $filename): string
+    {
+        return $this->getPath('migrations') . "/{$filename}";
+    }
+
+    /**
+     * Build fully qualified class name.
+     *
+     * @param string $namespace The namespace
+     * @param string $className The class name
+     * @return string The FQN like "\\App\\Models\\User"
+     */
+    protected function buildFQN(string $namespace, string $className): string
+    {
+        return "\\{$namespace}\\{$className}";
+    }
+
+    /**
+     * Build fully qualified class name with ::class.
+     *
+     * @param string $namespace The namespace
+     * @param string $className The class name
+     * @return string The FQN like "\\App\\Models\\User::class"
+     */
+    protected function buildFQNClass(string $namespace, string $className): string
+    {
+        return $this->buildFQN($namespace, $className) . '::class';
+    }
+
+    /**
+     * Build fully qualified factory call.
+     *
+     * @param string $namespace The model namespace
+     * @param string $modelName The model name
+     * @return string Like "\\App\\Models\\User::factory()"
+     */
+    protected function buildFactoryCall(string $namespace, string $modelName): string
+    {
+        return $this->buildFQN($namespace, $modelName) . '::factory()';
+    }
+
+    /**
+     * Process a stub by replacing placeholders.
+     *
+     * @param string $stubName The stub file name (without .stub extension)
+     * @param array $replacements Associative array of placeholder => value
+     * @return string The processed stub content
+     */
+    protected function processStub(string $stubName, array $replacements): string
+    {
+        $stub = $this->getStub($stubName);
+
+        $placeholders = array_map(fn($key) => "{{ {$key} }}", array_keys($replacements));
+        $values = array_values($replacements);
+
+        return str_replace($placeholders, $values, $stub);
+    }
 }
