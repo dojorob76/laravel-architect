@@ -37,15 +37,13 @@ class MakeApiMigrationCommand extends Command
 
         $schemaStr = $this->buildSchemaString($schema, $isPivot, $compositeUnique, $tableName);
 
-        $stub = $this->getStub('migration');
-        $content = str_replace(
-            ['{{ table }}', '{{ schema }}'],
-            [$tableName, $schemaStr],
-            $stub
-        );
+        $content = $this->processStub('migration', [
+            'table' => $tableName,
+            'schema' => $schemaStr,
+        ]);
 
         $filename = date('Y_m_d_His') . "_create_{$tableName}_table.php";
-        $path = base_path(config('api_scaffolding.paths.migrations') . "/{$filename}");
+        $path = $this->getMigrationPath($filename);
 
         $this->writeFile($files, $path, $content);
 
@@ -58,7 +56,7 @@ class MakeApiMigrationCommand extends Command
 
     protected function extractForeignKeys(array $schema): array
     {
-        return array_filter($schema, fn($col) => $this->isForeignKey($col));
+        return $this->getForeignKeyFields($schema);
     }
 
     protected function validateForeignKeys(array $schema, bool $isPivot): bool

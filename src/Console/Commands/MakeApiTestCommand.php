@@ -26,7 +26,6 @@ class MakeApiTestCommand extends Command
         $route = $this->getTableName($name);
         $singularRoute = Str::snake($name);
         $table = $this->getTableName($name);
-        $modelNamespace = config('api_scaffolding.namespaces.models');
 
         $testData = $this->buildTestData($schema);
         $testUpdateData = $this->buildTestUpdateData($schema);
@@ -44,52 +43,28 @@ class MakeApiTestCommand extends Command
         $batchSoftDeleteTests = $softDeletes ? $this->buildBatchSoftDeleteTests($route, $className) : '';
         $multiTenantTests = $multiTenant ? $this->buildMultiTenantTests($route, $className) : '';
 
-        $stub = $this->getStub('test');
-        $content = str_replace(
-            [
-                '{{ model_namespace }}',
-                '{{ class }}',
-                '{{ route }}',
-                '{{ singular_route }}',
-                '{{ table }}',
-                '{{ test_data }}',
-                '{{ test_update_data }}',
-                '{{ test_invalid_data }}',
-                '{{ test_partial_update }}',
-                '{{ test_batch_create }}',
-                '{{ test_batch_update_field }}',
-                '{{ required_fields }}',
-                '{{ search_field }}',
-                '{{ soft_delete_tests }}',
-                '{{ soft_delete_assertion }}',
-                '{{ batch_delete_assertion }}',
-                '{{ batch_soft_delete_tests }}',
-                '{{ multi_tenant_tests }}'
-            ],
-            [
-                $modelNamespace,
-                $className,
-                $route,
-                $singularRoute,
-                $table,
-                $testData,
-                $testUpdateData,
-                $testInvalidData,
-                $testPartialUpdate,
-                $testBatchCreate,
-                $testBatchUpdateField,
-                $requiredFields,
-                $searchField,
-                $softDeleteTests,
-                $softDeleteAssertion,
-                $batchDeleteAssertion,
-                $batchSoftDeleteTests,
-                $multiTenantTests
-            ],
-            $stub
-        );
+        $content = $this->processStub('test', [
+            'model_namespace' => $this->getNamespace('models'),
+            'class' => $className,
+            'route' => $route,
+            'singular_route' => $singularRoute,
+            'table' => $table,
+            'test_data' => $testData,
+            'test_update_data' => $testUpdateData,
+            'test_invalid_data' => $testInvalidData,
+            'test_partial_update' => $testPartialUpdate,
+            'test_batch_create' => $testBatchCreate,
+            'test_batch_update_field' => $testBatchUpdateField,
+            'required_fields' => $requiredFields,
+            'search_field' => $searchField,
+            'soft_delete_tests' => $softDeleteTests,
+            'soft_delete_assertion' => $softDeleteAssertion,
+            'batch_delete_assertion' => $batchDeleteAssertion,
+            'batch_soft_delete_tests' => $batchSoftDeleteTests,
+            'multi_tenant_tests' => $multiTenantTests,
+        ]);
 
-        $path = base_path(config('api_scaffolding.paths.tests') . "/{$className}Test.php");
+        $path = $this->getTestPath($className);
         $this->writeFile($files, $path, $content);
 
         $this->info("PEST test created: {$className}Test");
@@ -103,7 +78,7 @@ class MakeApiTestCommand extends Command
 
         $data = [];
         foreach ($schema as $col) {
-            if ($col['name'] !== 'tenant_id') {
+            if ($this->isNotTenantField($col)) {
                 $value = $this->generateTestValue($col);
                 $data[] = "        '{$col['name']}' => {$value}";
             }
@@ -120,7 +95,7 @@ class MakeApiTestCommand extends Command
 
         $data = [];
         foreach ($schema as $col) {
-            if (!$this->isForeignKey($col) && $col['name'] !== 'tenant_id') {
+            if ($this->isRegularDataField($col)) {
                 $value = $this->generateTestValue($col, true);
                 $data[] = "        '{$col['name']}' => {$value}";
                 break;
@@ -156,7 +131,7 @@ class MakeApiTestCommand extends Command
     protected function buildTestPartialUpdate(array $schema): string
     {
         foreach ($schema as $col) {
-            if (!$this->isForeignKey($col) && $col['name'] !== 'tenant_id') {
+            if ($this->isRegularDataField($col)) {
                 $value = $this->generateTestValue($col, true);
                 return "        '{$col['name']}' => {$value}";
             }
@@ -171,7 +146,7 @@ class MakeApiTestCommand extends Command
         for ($i = 1; $i <= 2; $i++) {
             $fields = [];
             foreach ($schema as $col) {
-                if ($col['name'] !== 'tenant_id') {
+                if ($this->isNotTenantField($col)) {
                     $value = $this->generateTestValue($col);
                     $fields[] = "'{$col['name']}' => {$value}";
                 }
@@ -185,7 +160,7 @@ class MakeApiTestCommand extends Command
     protected function buildTestBatchUpdateField(array $schema): string
     {
         foreach ($schema as $col) {
-            if (!$this->isForeignKey($col) && $col['name'] !== 'tenant_id') {
+            if ($this->isRegularDataField($col)) {
                 $value = $this->generateTestValue($col, true);
                 return "                '{$col['name']}' => {$value}";
             }
@@ -198,7 +173,7 @@ class MakeApiTestCommand extends Command
     {
         $required = [];
         foreach ($schema as $col) {
-            if ($this->isRequired($col) && $col['name'] !== 'tenant_id') {
+            if ($this->isRequired($col) && $this->isNotTenantField($col)) {
                 $required[] = "            '{$col['name']}'";
             }
         }

@@ -18,17 +18,14 @@ class MakeApiServiceCommand extends Command
     {
         $name = $this->argument('name');
         $className = Str::studly($name);
-        $namespace = config('api_scaffolding.namespaces.services');
-        $interfaceNamespace = config('api_scaffolding.namespaces.repository_interfaces');
 
-        $stub = $this->getStub('service');
-        $content = str_replace(
-            ['{{ namespace }}', '{{ interface_namespace }}', '{{ class }}'],
-            [$namespace, $interfaceNamespace, $className],
-            $stub
-        );
+        $content = $this->processStub('service', [
+            'namespace' => $this->getNamespace('services'),
+            'interface_namespace' => $this->getNamespace('repository_interfaces'),
+            'class' => $className,
+        ]);
 
-        $path = base_path(config('api_scaffolding.paths.services') . "/{$className}Service.php");
+        $path = $this->getServicePath($className);
         $this->writeFile($files, $path, $content);
 
         $this->info("Service created: {$className}Service");

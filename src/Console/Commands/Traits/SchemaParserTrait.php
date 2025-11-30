@@ -168,4 +168,238 @@ trait SchemaParserTrait
     {
         return $col['required'] ?? false;
     }
+
+    /**
+     * Build full file path for a controller.
+     *
+     * @param string $className The class name
+     * @return string The full path
+     */
+    protected function getControllerPath(string $className): string
+    {
+        return $this->getPath('controllers') . "/{$className}Controller.php";
+    }
+
+    /**
+     * Build full file path for a request.
+     *
+     * @param string $className The class name
+     * @return string The full path
+     */
+    protected function getRequestPath(string $className): string
+    {
+        return $this->getPath('requests') . "/{$className}Request.php";
+    }
+
+    /**
+     * Build full file path for a service.
+     *
+     * @param string $className The class name
+     * @return string The full path
+     */
+    protected function getServicePath(string $className): string
+    {
+        return $this->getPath('services') . "/{$className}Service.php";
+    }
+
+    /**
+     * Build full file path for a factory.
+     *
+     * @param string $className The class name
+     * @return string The full path
+     */
+    protected function getFactoryPath(string $className): string
+    {
+        return $this->getPath('factories') . "/{$className}Factory.php";
+    }
+
+    /**
+     * Build full file path for a test.
+     *
+     * @param string $className The class name
+     * @return string The full path
+     */
+    protected function getTestPath(string $className): string
+    {
+        return $this->getPath('tests') . "/{$className}Test.php";
+    }
+
+    /**
+     * Build full file path for a resource.
+     *
+     * @param string $className The class name
+     * @param string $suffix The resource suffix (default: 'Resource')
+     * @return string The full path
+     */
+    protected function getResourcePath(string $className, string $suffix = 'Resource'): string
+    {
+        return $this->getPath('resources') . "/{$className}{$suffix}.php";
+    }
+
+    /**
+     * Build full file path for a repository.
+     *
+     * @param string $className The class name
+     * @param string $prefix The repository prefix (e.g., 'Eloquent', 'MySQL', 'Postgres')
+     * @return string The full path
+     */
+    protected function getRepositoryPath(string $className, string $prefix = 'Eloquent'): string
+    {
+        return $this->getPath('repositories') . "/{$prefix}{$className}Repository.php";
+    }
+
+    /**
+     * Build full file path for a repository interface.
+     *
+     * @param string $className The class name
+     * @return string The full path
+     */
+    protected function getRepositoryInterfacePath(string $className): string
+    {
+        return $this->getPath('repository_interfaces') . "/{$className}RepositoryInterface.php";
+    }
+
+    /**
+     * Build full file path for a migration.
+     *
+     * @param string $filename The migration filename
+     * @return string The full path
+     */
+    protected function getMigrationPath(string $filename): string
+    {
+        return $this->getPath('migrations') . "/{$filename}";
+    }
+
+    /**
+     * Build fully qualified class name.
+     *
+     * @param string $namespace The namespace
+     * @param string $className The class name
+     * @return string The FQN like "\\App\\Models\\User"
+     */
+    protected function buildFQN(string $namespace, string $className): string
+    {
+        return "\\{$namespace}\\{$className}";
+    }
+
+    /**
+     * Build fully qualified class name with ::class.
+     *
+     * @param string $namespace The namespace
+     * @param string $className The class name
+     * @return string The FQN like "\\App\\Models\\User::class"
+     */
+    protected function buildFQNClass(string $namespace, string $className): string
+    {
+        return $this->buildFQN($namespace, $className) . '::class';
+    }
+
+    /**
+     * Build fully qualified factory call.
+     *
+     * @param string $namespace The model namespace
+     * @param string $modelName The model name
+     * @return string Like "\\App\\Models\\User::factory()"
+     */
+    protected function buildFactoryCall(string $namespace, string $modelName): string
+    {
+        return $this->buildFQN($namespace, $modelName) . '::factory()';
+    }
+
+    /**
+     * Process a stub by replacing placeholders.
+     *
+     * @param string $stubName The stub file name (without .stub extension)
+     * @param array $replacements Associative array of placeholder => value
+     * @return string The processed stub content
+     */
+    protected function processStub(string $stubName, array $replacements): string
+    {
+        $stub = $this->getStub($stubName);
+
+        $placeholders = array_map(fn($key) => "{{ {$key} }}", array_keys($replacements));
+        $values = array_values($replacements);
+
+        return str_replace($placeholders, $values, $stub);
+    }
+
+    /**
+     * Check if a column is NOT the tenant_id field.
+     *
+     * @param array $col The column definition from schema
+     * @return bool True if the column is not tenant_id
+     */
+    protected function isNotTenantField(array $col): bool
+    {
+        return $col['name'] !== 'tenant_id';
+    }
+
+    /**
+     * Check if a column is a regular data field (not a foreign key and not tenant_id).
+     *
+     * Useful for filtering schema columns to only those that should be included
+     * in test data, fillable arrays, or resource fields.
+     *
+     * @param array $col The column definition from schema
+     * @return bool True if the column is a regular data field
+     */
+    protected function isRegularDataField(array $col): bool
+    {
+        return !$this->isForeignKey($col) && $col['name'] !== 'tenant_id';
+    }
+
+    /**
+     * Extract comprehensive relationship information from a foreign key column name.
+     *
+     * Returns an object with all the information needed to build relationships,
+     * resources, and other FK-related code.
+     *
+     * @param string $foreignKeyName The foreign key column name (e.g., 'user_id')
+     * @return object Object with tableName, relationName, modelName, and modelFQN
+     */
+    protected function extractRelationshipInfo(string $foreignKeyName): object
+    {
+        $tableName = $this->extractForeignTableName($foreignKeyName);
+        $modelName = $this->getForeignModelName($foreignKeyName);
+
+        return (object) [
+            'tableName' => $tableName,
+            'relationName' => \Illuminate\Support\Str::camel($tableName),
+            'modelName' => $modelName,
+            'modelFQN' => $this->buildFQNClass($this->getNamespace('models'), $modelName),
+        ];
+    }
+
+    /**
+     * Filter schema to return only foreign key columns.
+     *
+     * @param array $schema The schema array
+     * @return array Array of foreign key columns
+     */
+    protected function getForeignKeyFields(array $schema): array
+    {
+        return array_filter($schema, fn($col) => $this->isForeignKey($col));
+    }
+
+    /**
+     * Filter schema to return only non-foreign key columns.
+     *
+     * @param array $schema The schema array
+     * @return array Array of non-foreign key columns
+     */
+    protected function getNonForeignKeyFields(array $schema): array
+    {
+        return array_filter($schema, fn($col) => !$this->isForeignKey($col));
+    }
+
+    /**
+     * Filter schema to return only regular data fields (not FKs, not tenant_id).
+     *
+     * @param array $schema The schema array
+     * @return array Array of regular data field columns
+     */
+    protected function getRegularDataFields(array $schema): array
+    {
+        return array_filter($schema, fn($col) => $this->isRegularDataField($col));
+    }
 }
