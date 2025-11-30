@@ -322,4 +322,84 @@ trait SchemaParserTrait
 
         return str_replace($placeholders, $values, $stub);
     }
+
+    /**
+     * Check if a column is NOT the tenant_id field.
+     *
+     * @param array $col The column definition from schema
+     * @return bool True if the column is not tenant_id
+     */
+    protected function isNotTenantField(array $col): bool
+    {
+        return $col['name'] !== 'tenant_id';
+    }
+
+    /**
+     * Check if a column is a regular data field (not a foreign key and not tenant_id).
+     *
+     * Useful for filtering schema columns to only those that should be included
+     * in test data, fillable arrays, or resource fields.
+     *
+     * @param array $col The column definition from schema
+     * @return bool True if the column is a regular data field
+     */
+    protected function isRegularDataField(array $col): bool
+    {
+        return !$this->isForeignKey($col) && $col['name'] !== 'tenant_id';
+    }
+
+    /**
+     * Extract comprehensive relationship information from a foreign key column name.
+     *
+     * Returns an object with all the information needed to build relationships,
+     * resources, and other FK-related code.
+     *
+     * @param string $foreignKeyName The foreign key column name (e.g., 'user_id')
+     * @return object Object with tableName, relationName, modelName, and modelFQN
+     */
+    protected function extractRelationshipInfo(string $foreignKeyName): object
+    {
+        $tableName = $this->extractForeignTableName($foreignKeyName);
+        $modelName = $this->getForeignModelName($foreignKeyName);
+
+        return (object) [
+            'tableName' => $tableName,
+            'relationName' => \Illuminate\Support\Str::camel($tableName),
+            'modelName' => $modelName,
+            'modelFQN' => $this->buildFQNClass($this->getNamespace('models'), $modelName),
+        ];
+    }
+
+    /**
+     * Filter schema to return only foreign key columns.
+     *
+     * @param array $schema The schema array
+     * @return array Array of foreign key columns
+     */
+    protected function getForeignKeyFields(array $schema): array
+    {
+        return array_filter($schema, fn($col) => $this->isForeignKey($col));
+    }
+
+    /**
+     * Filter schema to return only non-foreign key columns.
+     *
+     * @param array $schema The schema array
+     * @return array Array of non-foreign key columns
+     */
+    protected function getNonForeignKeyFields(array $schema): array
+    {
+        return array_filter($schema, fn($col) => !$this->isForeignKey($col));
+    }
+
+    /**
+     * Filter schema to return only regular data fields (not FKs, not tenant_id).
+     *
+     * @param array $schema The schema array
+     * @return array Array of regular data field columns
+     */
+    protected function getRegularDataFields(array $schema): array
+    {
+        return array_filter($schema, fn($col) => $this->isRegularDataField($col));
+    }
 }

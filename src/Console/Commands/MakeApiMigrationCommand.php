@@ -56,7 +56,7 @@ class MakeApiMigrationCommand extends Command
 
     protected function extractForeignKeys(array $schema): array
     {
-        return array_filter($schema, fn($col) => $this->isForeignKey($col));
+        return $this->getForeignKeyFields($schema);
     }
 
     protected function validateForeignKeys(array $schema, bool $isPivot): bool

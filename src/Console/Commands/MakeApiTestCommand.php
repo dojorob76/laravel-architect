@@ -78,7 +78,7 @@ class MakeApiTestCommand extends Command
 
         $data = [];
         foreach ($schema as $col) {
-            if ($col['name'] !== 'tenant_id') {
+            if ($this->isNotTenantField($col)) {
                 $value = $this->generateTestValue($col);
                 $data[] = "        '{$col['name']}' => {$value}";
             }
@@ -95,7 +95,7 @@ class MakeApiTestCommand extends Command
 
         $data = [];
         foreach ($schema as $col) {
-            if (!$this->isForeignKey($col) && $col['name'] !== 'tenant_id') {
+            if ($this->isRegularDataField($col)) {
                 $value = $this->generateTestValue($col, true);
                 $data[] = "        '{$col['name']}' => {$value}";
                 break;
@@ -131,7 +131,7 @@ class MakeApiTestCommand extends Command
     protected function buildTestPartialUpdate(array $schema): string
     {
         foreach ($schema as $col) {
-            if (!$this->isForeignKey($col) && $col['name'] !== 'tenant_id') {
+            if ($this->isRegularDataField($col)) {
                 $value = $this->generateTestValue($col, true);
                 return "        '{$col['name']}' => {$value}";
             }
@@ -146,7 +146,7 @@ class MakeApiTestCommand extends Command
         for ($i = 1; $i <= 2; $i++) {
             $fields = [];
             foreach ($schema as $col) {
-                if ($col['name'] !== 'tenant_id') {
+                if ($this->isNotTenantField($col)) {
                     $value = $this->generateTestValue($col);
                     $fields[] = "'{$col['name']}' => {$value}";
                 }
@@ -160,7 +160,7 @@ class MakeApiTestCommand extends Command
     protected function buildTestBatchUpdateField(array $schema): string
     {
         foreach ($schema as $col) {
-            if (!$this->isForeignKey($col) && $col['name'] !== 'tenant_id') {
+            if ($this->isRegularDataField($col)) {
                 $value = $this->generateTestValue($col, true);
                 return "                '{$col['name']}' => {$value}";
             }
@@ -173,7 +173,7 @@ class MakeApiTestCommand extends Command
     {
         $required = [];
         foreach ($schema as $col) {
-            if ($this->isRequired($col) && $col['name'] !== 'tenant_id') {
+            if ($this->isRequired($col) && $this->isNotTenantField($col)) {
                 $required[] = "            '{$col['name']}'";
             }
         }

@@ -80,19 +80,16 @@ class MakeApiModelCommand extends Command
     protected function buildBelongsToRelationship(array $col, string $namespace): string
     {
         $foreignKeyName = $col['name'];
-        $tableName = $this->extractForeignTableName($foreignKeyName);
-        $methodName = Str::camel($tableName);
-        $modelName = $this->getForeignModelName($foreignKeyName);
-        $modelFQN = $this->buildFQNClass($namespace, $modelName);
+        $rel = $this->extractRelationshipInfo($foreignKeyName);
 
         return <<<PHP
 
     /**
-     * Get the {$tableName} that owns this record.
+     * Get the {$rel->tableName} that owns this record.
      */
-    public function {$methodName}()
+    public function {$rel->relationName}()
     {
-        return \$this->belongsTo({$modelFQN}, '{$foreignKeyName}');
+        return \$this->belongsTo({$rel->modelFQN}, '{$foreignKeyName}');
     }
 PHP;
     }

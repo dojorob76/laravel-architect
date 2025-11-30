@@ -60,12 +60,11 @@ class MakeApiResourceCommand extends Command
             return '';
         }
 
-        $fields = [];
-        foreach ($schema as $col) {
-            if (!$this->isForeignKey($col)) {
-                $fields[] = "            '{$col['name']}' => \$this->{$col['name']}";
-            }
-        }
+        $nonFkFields = $this->getNonForeignKeyFields($schema);
+        $fields = array_map(
+            fn($col) => "            '{$col['name']}' => \$this->{$col['name']}",
+            $nonFkFields
+        );
 
         return empty($fields) ? '' : implode(",\n", $fields) . ',';
     }
@@ -77,12 +76,11 @@ class MakeApiResourceCommand extends Command
 
         foreach ($schema as $col) {
             if ($this->isForeignKey($col)) {
-                $tableName = $this->extractForeignTableName($col['name']);
-                $relationName = Str::camel($tableName);
-                $resourceClass = $this->getForeignModelName($col['name']) . 'Resource';
+                $rel = $this->extractRelationshipInfo($col['name']);
+                $resourceClass = $rel->modelName . 'Resource';
                 $resourceFQN = $this->buildFQN($resourceNamespace, $resourceClass);
 
-                $relationships[] = "            '{$relationName}' => new {$resourceFQN}(\$this->whenLoaded('{$relationName}'))";
+                $relationships[] = "            '{$rel->relationName}' => new {$resourceFQN}(\$this->whenLoaded('{$rel->relationName}'))";
             }
         }
 
