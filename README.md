@@ -110,6 +110,8 @@ Register in `config/app.php`:
 ],
 ```
 
+ℹ️ - The `boost-application-standards-helper.md` can be copy/pasted into your `.ai/guidelines` directory (and edited as desired) if you are using [Laravel Boost](https://github.com/laravel/boost).
+
 ---
 
 ## 🐳 Docker Development Environment
