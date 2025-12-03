@@ -120,14 +120,14 @@ trait SchemaParserTrait
     }
 
     /**
-     * Extract the foreign table name from a foreign key column name.
+     * Extract the singular entity name from a foreign key column name.
      *
      * Removes the '_id' suffix from column names like 'user_id' to get 'user'.
      *
      * @param string $columnName The foreign key column name
-     * @return string The foreign table name (singular)
+     * @return string The singular entity name (e.g., 'user', 'blog_post')
      */
-    protected function extractForeignTableName(string $columnName): string
+    protected function extractForeignEntityName(string $columnName): string
     {
         return str_replace('_id', '', $columnName);
     }
@@ -142,7 +142,7 @@ trait SchemaParserTrait
      */
     protected function getForeignModelName(string $columnName): string
     {
-        return \Illuminate\Support\Str::studly($this->extractForeignTableName($columnName));
+        return \Illuminate\Support\Str::studly($this->extractForeignEntityName($columnName));
     }
 
     /**
@@ -155,7 +155,7 @@ trait SchemaParserTrait
      */
     protected function getForeignTableNamePluralized(string $columnName): string
     {
-        return \Illuminate\Support\Str::snake(\Illuminate\Support\Str::plural($this->extractForeignTableName($columnName)));
+        return \Illuminate\Support\Str::snake(\Illuminate\Support\Str::plural($this->extractForeignEntityName($columnName)));
     }
 
     /**
@@ -359,12 +359,12 @@ trait SchemaParserTrait
      */
     protected function extractRelationshipInfo(string $foreignKeyName): object
     {
-        $tableName = $this->extractForeignTableName($foreignKeyName);
+        $entityName = $this->extractForeignEntityName($foreignKeyName);
         $modelName = $this->getForeignModelName($foreignKeyName);
 
         return (object) [
-            'tableName' => $tableName,
-            'relationName' => \Illuminate\Support\Str::camel($tableName),
+            'tableName' => $entityName,
+            'relationName' => \Illuminate\Support\Str::camel($entityName),
             'modelName' => $modelName,
             'modelFQN' => $this->buildFQNClass($this->getNamespace('models'), $modelName),
         ];

@@ -71,12 +71,12 @@ class MakeApiMigrationCommand extends Command
                     return false;
                 }
 
-                $tableName = $this->extractForeignTableName($columnName);
+                $entityName = $this->extractForeignEntityName($columnName);
 
-                if (!$this->modelOrTableExists($tableName)) {
-                    $this->error("Foreign key '{$columnName}' references table/model '{$tableName}' which does not exist.");
+                if (!$this->modelOrTableExists($entityName)) {
+                    $this->error("Foreign key '{$columnName}' references table/model '{$entityName}' which does not exist.");
                     $this->newLine();
-                    $this->comment("You must create the '{$tableName}' model first:");
+                    $this->comment("You must create the '{$entityName}' model first:");
                     $this->comment("  php artisan make:api-bundle " . $this->getForeignModelName($columnName));
                     $this->newLine();
                     $this->comment("Or if the table exists with a different name, rename your foreign key to match:");
@@ -87,7 +87,7 @@ class MakeApiMigrationCommand extends Command
                 $col['isForeignKey'] = true;
 
                 if (!isset($col['foreignTable'])) {
-                    $col['foreignTable'] = $tableName;
+                    $col['foreignTable'] = $entityName;
                 }
             }
         }
@@ -101,7 +101,7 @@ class MakeApiMigrationCommand extends Command
                 return false;
             }
 
-            $fkNames = array_map(fn($col) => $this->extractForeignTableName($col['name']), $foreignKeys);
+            $fkNames = array_map(fn($col) => $this->extractForeignEntityName($col['name']), $foreignKeys);
             sort($fkNames);
             $expectedName = implode('_', $fkNames);
 
@@ -169,7 +169,7 @@ class MakeApiMigrationCommand extends Command
 
             if ($this->isForeignKey($col)) {
                 if (!isset($col['foreignTable'])) {
-                    $col['foreignTable'] = $this->extractForeignTableName($col['name']);
+                    $col['foreignTable'] = $this->extractForeignEntityName($col['name']);
                 }
 
                 $foreignKeys[] = $col;
