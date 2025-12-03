@@ -23,6 +23,8 @@ services:
       - PHP_IDE_CONFIG=serverName=Docker
     networks:
       - laravel_architect
+    dns:
+      - 8.8.8.8
     depends_on:
       mysql:
         condition: service_healthy
