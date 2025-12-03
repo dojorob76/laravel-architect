@@ -890,6 +890,78 @@ The `--schema` option accepts JSON array of column definitions:
 - `onDelete` - Cascade behavior (default: 'cascade')
 - `onUpdate` - Update behavior (default: 'cascade')
 
+---
+
+#### Foreign Key Relationships
+
+Define relationships using the parent model name for a cleaner, more intuitive syntax:
+
+```json
+[
+  {"name": "title", "type": "string", "required": true},
+  {"parentModel": "User", "required": true},
+  {"parentModel": "Category", "required": false, "onDelete": "cascade"}
+]
+```
+
+The system automatically:
+- Generates column name: `user_id`, `category_id`
+- Creates foreign key constraints to plural tables: `users`, `categories`
+- Applies appropriate cascade behavior (`onUpdate` always `cascade`, `onDelete` defaults to `cascade` if required or `set null` if optional)
+- Handles nullable foreign keys when `required: false`
+
+**Traditional Format Still Supported:**
+
+You can still use the column-centric format if preferred:
+
+```json
+{
+  "name": "user_id",
+  "type": "unsignedBigInteger",
+  "isForeignKey": true,
+  "foreignTable": "user",
+  "onDelete": "cascade"
+}
+```
+
+---
+
+#### Pivot Tables
+
+Create many-to-many pivot tables using model names:
+
+```bash
+php artisan make:api-migration --pivot=true --models='Post,Tag'
+```
+
+This command:
+- Creates `post_tag` table (alphabetically sorted)
+- Adds composite primary key (in the order you specify models)
+- Generates foreign key constraints
+- Injects `tags()` method into Post model
+- Injects `posts()` method into Tag model
+
+**Options:**
+- `--update-models=false` - Skip automatic relationship injection if you prefer to add them manually
+
+**Requirements:**
+- Both models must exist before creating the pivot table
+- Models must be singular StudlyCase (e.g., `Post`, `Tag`, not `Posts`, `tags`)
+- Exactly 2 models required
+
+**Example Workflow:**
+
+```bash
+# 1. Create both models first
+php artisan make:api-bundle Post
+php artisan make:api-bundle Tag
+
+# 2. Create pivot table (automatically updates both models)
+php artisan make:api-migration --pivot=true --models='Post,Tag'
+```
+
+---
+
 **Required vs Nullable:**
 
 ```json

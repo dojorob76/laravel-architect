@@ -131,15 +131,11 @@ test('pivot migration has no timestamps and has composite primary key', function
     Artisan::call('make:api-model', ['name' => 'Tag']);
     Artisan::call('make:api-migration', ['name' => 'Tag', '--schema' => json_encode([['name' => 'name', 'type' => 'string']])]);
 
-    $schema = json_encode([
-        ['name' => 'post_id', 'type' => 'unsignedBigInteger', 'isForeignKey' => true, 'foreignTable' => 'post'],
-        ['name' => 'tag_id', 'type' => 'unsignedBigInteger', 'isForeignKey' => true, 'foreignTable' => 'tag'],
-    ]);
-
+    // Use new model-centric pivot syntax
     Artisan::call('make:api-migration', [
-        'name' => 'post_tag',
-        '--schema' => $schema,
-        '--pivot' => 'true'
+        '--pivot' => 'true',
+        '--models' => 'Post,Tag',
+        '--update-models' => 'false'
     ]);
 
     $content = $this->getMigrationContent('post_tag');

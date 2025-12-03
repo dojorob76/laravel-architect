@@ -21,7 +21,7 @@ class MakeApiModelCommand extends Command
         $isPivot = $this->option('pivot') === 'true';
 
         $className = Str::studly($name);
-        $tableName = $this->getTableName($name, $isPivot);
+        $tableName = $isPivot ? Str::snake($name) : $this->getTableName($name);
         $namespace = $this->getNamespace('models');
 
         $fillable = $this->buildFillableArray($schema);

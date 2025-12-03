@@ -140,15 +140,11 @@ test('pivot table automatically gets composite unique', function () {
         '--schema' => json_encode([['name' => 'name', 'type' => 'string']])
     ]);
 
-    $schema = json_encode([
-        ['name' => 'post_id', 'type' => 'unsignedBigInteger'],
-        ['name' => 'tag_id', 'type' => 'unsignedBigInteger'],
-    ]);
-
+    // Use new model-centric pivot syntax
     Artisan::call('make:api-migration', [
-        'name' => 'post_tag',
-        '--schema' => $schema,
-        '--pivot' => 'true'
+        '--pivot' => 'true',
+        '--models' => 'Post,Tag',
+        '--update-models' => 'false'
     ]);
 
     $content = $this->getMigrationContent('post_tag');

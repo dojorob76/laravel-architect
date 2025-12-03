@@ -12,21 +12,130 @@ class MakeApiMigrationCommand extends Command
 {
     use SchemaParserTrait;
 
-    protected $signature = 'make:api-migration {name} {--schema=} {--pivot=false} {--soft-deletes} {--multi-tenant} {--composite-unique=}';
+    protected $signature = 'make:api-migration {name?} {--schema=} {--pivot=false} {--models=} {--update-models=true} {--soft-deletes} {--multi-tenant} {--composite-unique=}';
     protected $description = 'Create a new API migration';
 
     public function handle(Filesystem $files): void
     {
+        $isPivot = $this->option('pivot') === 'true';
+
+        if ($isPivot) {
+            $this->handlePivotTable($files);
+        } else {
+            $this->handleRegularTable($files);
+        }
+    }
+
+    protected function handlePivotTable(Filesystem $files): void
+    {
+        $modelsOption = $this->option('models');
+
+        // Validation: --models required when --pivot=true
+        if (!$modelsOption) {
+            $this->error("The --models option is required when --pivot=true");
+            $this->comment("Example: php artisan make:api-migration --pivot=true --models='Post,Tag'");
+            return;
+        }
+
+        $models = $this->parseModels($modelsOption);
+
+        // Validation: Exactly 2 models required
+        if (count($models) !== 2) {
+            $this->error("Exactly 2 models are required for pivot tables.");
+            $this->comment("Example: --models='Post,Tag'");
+            return;
+        }
+
+        [$model1, $model2] = $models;
+
+        // Validate both models exist and are valid
+        foreach ([$model1, $model2] as $model) {
+            if (!$this->isValidModelName($model)) {
+                $this->error("Invalid model name: '{$model}'. Must be singular StudlyCase.");
+                return;
+            }
+
+            if (!$this->modelExists($model)) {
+                $this->error("Model '{$model}' does not exist. Create it first:");
+                $this->comment("  php artisan make:api-bundle {$model}");
+                return;
+            }
+        }
+
+        // Generate table name (alphabetical)
+        $tableName = $this->generatePivotTableName($model1, $model2);
+
+        // Generate schema (preserving user's model order for composite key)
+        $schema = $this->parseSchema(json_encode($this->generatePivotSchema($model1, $model2)));
+
+        // Auto-generate composite unique constraint
+        $compositeUnique = [array_map(fn($col) => $col['name'], $schema)];
+
+        if (!$this->validateForeignKeys($schema, true)) {
+            return;
+        }
+
+        // Build and write migration
+        $schemaStr = $this->buildSchemaString($schema, true, $compositeUnique, $tableName);
+        $content = $this->processStub('migration', [
+            'table' => $tableName,
+            'schema' => $schemaStr,
+        ]);
+
+        $filename = date('Y_m_d_His') . "_create_{$tableName}_table.php";
+        $path = $this->getMigrationPath($filename);
+        $this->writeFile($files, $path, $content);
+
+        $this->info("Pivot migration created: {$filename}");
+        $this->info("Pivot table: {$tableName}");
+
+        // Update models with belongsToMany relationships
+        $shouldUpdateModels = $this->option('update-models') !== 'false';
+
+        if ($shouldUpdateModels) {
+            $this->newLine();
+            $this->info("Updating models with belongsToMany relationships...");
+
+            $result = $this->updatePivotModels($model1, $model2, $tableName);
+
+            foreach ($result['messages'] as $message) {
+                $this->comment("  ✓ {$message}");
+            }
+
+            if (!$result['success']) {
+                $this->warn("Some model updates failed. You may need to manually add relationships.");
+            }
+        } else {
+            $this->newLine();
+            $this->comment("Skipped model updates (--update-models=false)");
+            $this->comment("Manually add relationships:");
+            $this->comment("  {$model1}::belongsToMany({$model2}::class, '{$tableName}')");
+            $this->comment("  {$model2}::belongsToMany({$model1}::class, '{$tableName}')");
+        }
+
+        $this->displayCompositeUniqueInfo($compositeUnique, $tableName);
+    }
+
+    protected function handleRegularTable(Filesystem $files): void
+    {
         $name = $this->argument('name');
+
+        if (!$name) {
+            $this->error("The name argument is required for non-pivot tables.");
+            $this->comment("Example: php artisan make:api-migration Video --schema='...'");
+            return;
+        }
+
+        // Continue with existing logic...
         $schema = $this->parseSchema($this->option('schema'));
         $compositeUnique = $this->parseCompositeUnique($this->option('composite-unique'));
-        $isPivot = $this->option('pivot') === 'true';
+        $isPivot = false;
 
         if (!$this->validateForeignKeys($schema, $isPivot)) {
             return;
         }
 
-        $tableName = $this->getTableName($name, $isPivot);
+        $tableName = $this->getTableName($name);
 
         if ($isPivot && empty($compositeUnique)) {
             $foreignKeys = $this->extractForeignKeys($schema);
@@ -101,16 +210,21 @@ class MakeApiMigrationCommand extends Command
                 return false;
             }
 
-            $fkNames = array_map(fn($col) => $this->extractForeignEntityName($col['name']), $foreignKeys);
-            sort($fkNames);
-            $expectedName = implode('_', $fkNames);
+            // Only validate table name if one was provided (old column-centric syntax)
+            // New model-centric syntax doesn't provide a name argument
+            $providedName = $this->argument('name');
+            if ($providedName) {
+                $fkNames = array_map(fn($col) => $this->extractForeignEntityName($col['name']), $foreignKeys);
+                sort($fkNames);
+                $expectedName = implode('_', $fkNames);
 
-            if (Str::snake($this->argument('name')) !== $expectedName) {
-                $this->warn("Pivot table name should be '{$expectedName}' (alphabetical order)");
-                $this->comment("Current: " . Str::snake($this->argument('name')));
+                if (Str::snake($providedName) !== $expectedName) {
+                    $this->warn("Pivot table name should be '{$expectedName}' (alphabetical order)");
+                    $this->comment("Current: " . Str::snake($providedName));
 
-                if (!$this->confirm('Continue anyway?', false)) {
-                    return false;
+                    if (!$this->confirm('Continue anyway?', false)) {
+                        return false;
+                    }
                 }
             }
         }
