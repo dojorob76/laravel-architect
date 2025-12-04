@@ -2,12 +2,19 @@
 
 namespace LaravelArchitect\Console\Commands\Traits;
 
+use Illuminate\Support\Facades\File;
+use Illuminate\Support\Str;
+
 trait SchemaParserTrait
 {
     protected function parseSchema(?string $schema): array
     {
         if (!$schema) return [];
-        return json_decode($schema, true) ?? [];
+
+        $parsed = json_decode($schema, true) ?? [];
+
+        // Normalize model-centric format to column-centric format
+        return $this->normalizeSchema($parsed);
     }
 
     protected function parseCompositeUnique(?string $compositeUniqueJson): array
@@ -102,32 +109,28 @@ trait SchemaParserTrait
     }
 
     /**
-     * Get the table name from a model name.
+     * Get the plural table name from a model name.
      *
-     * Regular tables are pluralized and snake_cased.
-     * Pivot tables are just snake_cased (not pluralized).
+     * Converts StudlyCase model names to plural snake_case table names.
+     * Example: 'User' => 'users', 'BlogPost' => 'blog_posts'
      *
      * @param string $name The model name
-     * @param bool $isPivot Whether this is a pivot table
-     * @return string The table name
+     * @return string The plural table name
      */
-    protected function getTableName(string $name, bool $isPivot = false): string
+    protected function getTableName(string $name): string
     {
-        if ($isPivot) {
-            return \Illuminate\Support\Str::snake($name);
-        }
         return \Illuminate\Support\Str::snake(\Illuminate\Support\Str::plural($name));
     }
 
     /**
-     * Extract the foreign table name from a foreign key column name.
+     * Extract the singular entity name from a foreign key column name.
      *
      * Removes the '_id' suffix from column names like 'user_id' to get 'user'.
      *
      * @param string $columnName The foreign key column name
-     * @return string The foreign table name (singular)
+     * @return string The singular entity name (e.g., 'user', 'blog_post')
      */
-    protected function extractForeignTableName(string $columnName): string
+    protected function extractForeignEntityName(string $columnName): string
     {
         return str_replace('_id', '', $columnName);
     }
@@ -142,20 +145,7 @@ trait SchemaParserTrait
      */
     protected function getForeignModelName(string $columnName): string
     {
-        return \Illuminate\Support\Str::studly($this->extractForeignTableName($columnName));
-    }
-
-    /**
-     * Get the pluralized foreign table name from a foreign key column name.
-     *
-     * Converts 'user_id' => 'users', 'blog_post_id' => 'blog_posts'
-     *
-     * @param string $columnName The foreign key column name
-     * @return string The snake_case pluralized table name
-     */
-    protected function getForeignTableNamePluralized(string $columnName): string
-    {
-        return \Illuminate\Support\Str::snake(\Illuminate\Support\Str::plural($this->extractForeignTableName($columnName)));
+        return \Illuminate\Support\Str::studly($this->extractForeignEntityName($columnName));
     }
 
     /**
@@ -324,18 +314,7 @@ trait SchemaParserTrait
     }
 
     /**
-     * Check if a column is NOT the tenant_id field.
-     *
-     * @param array $col The column definition from schema
-     * @return bool True if the column is not tenant_id
-     */
-    protected function isNotTenantField(array $col): bool
-    {
-        return $col['name'] !== 'tenant_id';
-    }
-
-    /**
-     * Check if a column is a regular data field (not a foreign key and not tenant_id).
+     * Check if a column is a regular data field (not a foreign key).
      *
      * Useful for filtering schema columns to only those that should be included
      * in test data, fillable arrays, or resource fields.
@@ -345,7 +324,7 @@ trait SchemaParserTrait
      */
     protected function isRegularDataField(array $col): bool
     {
-        return !$this->isForeignKey($col) && $col['name'] !== 'tenant_id';
+        return !$this->isForeignKey($col);
     }
 
     /**
@@ -359,12 +338,12 @@ trait SchemaParserTrait
      */
     protected function extractRelationshipInfo(string $foreignKeyName): object
     {
-        $tableName = $this->extractForeignTableName($foreignKeyName);
+        $entityName = $this->extractForeignEntityName($foreignKeyName);
         $modelName = $this->getForeignModelName($foreignKeyName);
 
         return (object) [
-            'tableName' => $tableName,
-            'relationName' => \Illuminate\Support\Str::camel($tableName),
+            'tableName' => $entityName,
+            'relationName' => \Illuminate\Support\Str::camel($entityName),
             'modelName' => $modelName,
             'modelFQN' => $this->buildFQNClass($this->getNamespace('models'), $modelName),
         ];
@@ -393,7 +372,7 @@ trait SchemaParserTrait
     }
 
     /**
-     * Filter schema to return only regular data fields (not FKs, not tenant_id).
+     * Filter schema to return only regular data fields (not FKs).
      *
      * @param array $schema The schema array
      * @return array Array of regular data field columns
@@ -401,5 +380,233 @@ trait SchemaParserTrait
     protected function getRegularDataFields(array $schema): array
     {
         return array_filter($schema, fn($col) => $this->isRegularDataField($col));
+    }
+
+    /**
+     * Convert model name to foreign key column name.
+     *
+     * @param string $modelName The StudlyCase model name (e.g., 'User', 'BlogPost')
+     * @return string The foreign key column name (e.g., 'user_id', 'blog_post_id')
+     */
+    protected function modelToForeignKeyColumn(string $modelName): string
+    {
+        return Str::snake($modelName) . '_id';
+    }
+
+    /**
+     * Validate that a model name follows StudlyCase singular convention.
+     *
+     * @param string $modelName The model name to validate
+     * @return bool True if valid
+     */
+    protected function isValidModelName(string $modelName): bool
+    {
+        // Must be StudlyCase (capital start, no underscores/spaces)
+        if (!preg_match('/^[A-Z][a-zA-Z0-9]*$/', $modelName)) {
+            return false;
+        }
+
+        // Check if accidentally plural (common mistake)
+        if (Str::plural($modelName) === $modelName && $modelName !== Str::singular($modelName)) {
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * Check if a model file exists.
+     *
+     * @param string $modelName The StudlyCase model name
+     * @return bool True if model file exists
+     */
+    protected function modelExists(string $modelName): bool
+    {
+        return File::exists($this->getModelPath($modelName));
+    }
+
+    /**
+     * Normalize schema from model-centric to column-centric format.
+     *
+     * Converts: {"parentModel": "User", "required": true}
+     * To: {"name": "user_id", "type": "unsignedBigInteger", "isForeignKey": true, ...}
+     *
+     * @param array $schema The raw schema array
+     * @return array The normalized schema array
+     * @throws \InvalidArgumentException If model name is invalid
+     */
+    protected function normalizeSchema(array $schema): array
+    {
+        $normalized = [];
+
+        foreach ($schema as $field) {
+            if (isset($field['parentModel'])) {
+                // Model-centric format - normalize to column-centric
+                $modelName = $field['parentModel'];
+
+                if (!$this->isValidModelName($modelName)) {
+                    throw new \InvalidArgumentException(
+                        "Invalid model name: '{$modelName}'. " .
+                        "Models must be singular StudlyCase (e.g., User, BlogPost, Tag)."
+                    );
+                }
+
+                $required = $field['required'] ?? true;
+
+                $normalized[] = [
+                    'name' => $this->modelToForeignKeyColumn($modelName),
+                    'type' => 'unsignedBigInteger',
+                    'isForeignKey' => true,
+                    'foreignTable' => $this->getTableName($modelName),
+                    'required' => $required,
+                    'onDelete' => $field['onDelete'] ?? ($required ? 'cascade' : 'set null'),
+                    'onUpdate' => 'cascade', // ALWAYS cascade
+                ];
+            } else {
+                // Regular data field or old column-centric format (pass through)
+                $normalized[] = $field;
+            }
+        }
+
+        return $normalized;
+    }
+
+    /**
+     * Generate pivot table name from two model names (alphabetically sorted).
+     *
+     * @param string $model1 First model name
+     * @param string $model2 Second model name
+     * @return string The pivot table name (e.g., 'post_tag')
+     */
+    protected function generatePivotTableName(string $model1, string $model2): string
+    {
+        $singular1 = Str::snake($model1);
+        $singular2 = Str::snake($model2);
+
+        $tables = [$singular1, $singular2];
+        sort($tables); // Always alphabetical
+
+        return implode('_', $tables);
+    }
+
+    /**
+     * Parse comma-separated model names from --models option.
+     *
+     * @param string|null $modelsString Comma-separated model names
+     * @return array Array of trimmed model names
+     */
+    protected function parseModels(?string $modelsString): array
+    {
+        if (!$modelsString) {
+            return [];
+        }
+
+        $models = array_map('trim', explode(',', $modelsString));
+        return array_filter($models);
+    }
+
+    /**
+     * Generate schema array for pivot table from two model names.
+     * Preserves user's model order for composite key order.
+     *
+     * @param string $model1 First model name
+     * @param string $model2 Second model name
+     * @return array Schema array with parentModel definitions
+     */
+    protected function generatePivotSchema(string $model1, string $model2): array
+    {
+        return [
+            ['parentModel' => $model1, 'required' => true],
+            ['parentModel' => $model2, 'required' => true],
+        ];
+    }
+
+    /**
+     * Add belongsToMany relationship to an existing model file.
+     *
+     * @param string $modelName The model to update
+     * @param string $relatedModel The related model name
+     * @param string $pivotTable The pivot table name
+     * @return bool True if successful, false otherwise
+     */
+    protected function addBelongsToManyRelationship(
+        string $modelName,
+        string $relatedModel,
+        string $pivotTable
+    ): bool {
+        $modelPath = $this->getModelPath($modelName);
+
+        if (!File::exists($modelPath)) {
+            return false;
+        }
+
+        $content = File::get($modelPath);
+        $relationshipName = Str::plural(Str::camel($relatedModel));
+
+        // Check if relationship already exists (idempotent)
+        if (str_contains($content, "public function {$relationshipName}()")) {
+            return true;
+        }
+
+        // Build relationship method
+        $modelNamespace = $this->getNamespace('models');
+        $relatedModelFQN = $this->buildFQNClass($modelNamespace, $relatedModel);
+
+        $relationship = <<<PHP
+
+    /**
+     * Get the {$relationshipName} associated with this {$modelName}.
+     */
+    public function {$relationshipName}()
+    {
+        return \$this->belongsToMany({$relatedModelFQN}, '{$pivotTable}');
+    }
+PHP;
+
+        // Find closing brace and inject before it
+        $lastBracePos = strrpos($content, '}');
+        if ($lastBracePos === false) {
+            return false;
+        }
+
+        $updatedContent = substr_replace($content, $relationship . "\n", $lastBracePos, 0);
+        File::put($modelPath, $updatedContent);
+
+        return true;
+    }
+
+    /**
+     * Add belongsToMany relationships to both models in a pivot table.
+     *
+     * @param string $model1 First model name
+     * @param string $model2 Second model name
+     * @param string $pivotTable The pivot table name
+     * @return array Results with success status and messages
+     */
+    protected function updatePivotModels(
+        string $model1,
+        string $model2,
+        string $pivotTable
+    ): array {
+        $results = [
+            'success' => true,
+            'messages' => [],
+        ];
+
+        if ($this->addBelongsToManyRelationship($model1, $model2, $pivotTable)) {
+            $results['messages'][] = "Added " . Str::plural(Str::camel($model2)) . "() to {$model1}";
+        } else {
+            $results['success'] = false;
+            $results['messages'][] = "Failed to update {$model1} model";
+        }
+
+        if ($this->addBelongsToManyRelationship($model2, $model1, $pivotTable)) {
+            $results['messages'][] = "Added " . Str::plural(Str::camel($model1)) . "() to {$model2}";
+        } else {
+            $results['success'] = false;
+            $results['messages'][] = "Failed to update {$model2} model";
+        }
+
+        return $results;
     }
 }

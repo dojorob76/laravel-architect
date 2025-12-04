@@ -9,7 +9,6 @@ class MakeApiBundleCommand extends Command
     protected $signature = 'make:api-bundle {name}
                             {--schema=}
                             {--soft-deletes}
-                            {--multi-tenant}
                             {--composite-unique=}
                             {--driver=eloquent : Repository driver (eloquent|mysql|postgres|all)}';
 
@@ -20,7 +19,6 @@ class MakeApiBundleCommand extends Command
         $name = $this->argument('name');
         $schema = $this->option('schema');
         $softDeletes = $this->option('soft-deletes');
-        $multiTenant = $this->option('multi-tenant');
         $compositeUnique = $this->option('composite-unique');
         $driver = $this->option('driver');
 
@@ -29,24 +27,21 @@ class MakeApiBundleCommand extends Command
             'name' => $name,
             '--schema' => $schema,
             '--soft-deletes' => $softDeletes,
-            '--multi-tenant' => $multiTenant,
             '--composite-unique' => $compositeUnique,
         ];
 
-        // Args for model (soft-deletes + multi-tenant)
+        // Args for model (soft-deletes)
         $modelArgs = [
             'name' => $name,
             '--schema' => $schema,
             '--soft-deletes' => $softDeletes,
-            '--multi-tenant' => $multiTenant,
         ];
 
-        // Args for test (soft-deletes + multi-tenant + composite-unique)
+        // Args for test (soft-deletes + composite-unique)
         $testArgs = [
             'name' => $name,
             '--schema' => $schema,
             '--soft-deletes' => $softDeletes,
-            '--multi-tenant' => $multiTenant,
             '--composite-unique' => $compositeUnique,
         ];
 
@@ -72,10 +67,6 @@ class MakeApiBundleCommand extends Command
 
         if ($softDeletes) {
             $this->comment("   • With soft deletes");
-        }
-
-        if ($multiTenant) {
-            $this->comment("   • With multi-tenancy");
         }
 
         $this->newLine();

@@ -9,31 +9,31 @@ beforeEach(function () {
 });
 
 test('creates single composite unique constraint', function () {
-    // First create the Tenant model and migration
+    // First create the Category model and migration
     Artisan::call('make:api-model', [
-        'name' => 'Tenant',
+        'name' => 'Category',
         '--schema' => json_encode([['name' => 'name', 'type' => 'string']])
     ]);
 
     Artisan::call('make:api-migration', [
-        'name' => 'Tenant',
+        'name' => 'Category',
         '--schema' => json_encode([['name' => 'name', 'type' => 'string']])
     ]);
 
     $schema = json_encode([
         ['name' => 'email', 'type' => 'string', 'required' => true],
-        ['name' => 'tenant_id', 'type' => 'unsignedBigInteger', 'required' => true],
+        ['name' => 'category_id', 'type' => 'unsignedBigInteger', 'required' => true],
     ]);
 
     Artisan::call('make:api-migration', [
         'name' => 'User',
         '--schema' => $schema,
-        '--composite-unique' => '[["email","tenant_id"]]'
+        '--composite-unique' => '[["email","category_id"]]'
     ]);
 
     $content = $this->getMigrationContent('users');
 
-    expect($content)->toContain("\$table->unique(['email', 'tenant_id'], 'users_composite_unique')");
+    expect($content)->toContain("\$table->unique(['email', 'category_id'], 'users_composite_unique')");
 });
 
 test('creates multiple composite unique constraints with suffixes', function () {
@@ -140,15 +140,11 @@ test('pivot table automatically gets composite unique', function () {
         '--schema' => json_encode([['name' => 'name', 'type' => 'string']])
     ]);
 
-    $schema = json_encode([
-        ['name' => 'post_id', 'type' => 'unsignedBigInteger'],
-        ['name' => 'tag_id', 'type' => 'unsignedBigInteger'],
-    ]);
-
+    // Use new model-centric pivot syntax
     Artisan::call('make:api-migration', [
-        'name' => 'post_tag',
-        '--schema' => $schema,
-        '--pivot' => 'true'
+        '--pivot' => 'true',
+        '--models' => 'Post,Tag',
+        '--update-models' => 'false'
     ]);
 
     $content = $this->getMigrationContent('post_tag');

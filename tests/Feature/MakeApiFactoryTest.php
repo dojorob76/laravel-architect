@@ -145,13 +145,13 @@ test('foreign keys use model factory', function () {
 test('composite unique fields marked as unique', function () {
     $schema = json_encode([
         ['name' => 'email', 'type' => 'string'],
-        ['name' => 'tenant_id', 'type' => 'unsignedBigInteger'],
+        ['name' => 'category_id', 'type' => 'unsignedBigInteger'],
     ]);
 
     Artisan::call('make:api-factory', [
         'name' => 'User',
         '--schema' => $schema,
-        '--composite-unique' => '[["email","tenant_id"]]'
+        '--composite-unique' => '[["email","category_id"]]'
     ]);
 
     $content = $this->getGeneratedFileContent('factories', 'UserFactory.php');

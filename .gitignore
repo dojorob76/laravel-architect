@@ -6,6 +6,7 @@ composer.lock
 *.cache
 .phpunit.result.cache
 .claude/
+CLAUDE.md
 
 # Docker
 docker-compose.override.yml

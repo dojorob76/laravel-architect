@@ -104,7 +104,7 @@ class MakeApiRequestCommand extends Command
         if ($this->isForeignKey($col)) {
             $foreignTable = isset($col['foreignTable'])
                 ? Str::snake(Str::plural($col['foreignTable']))
-                : $this->getForeignTableNamePluralized($col['name']);
+                : $this->getTableName($this->getForeignModelName($col['name']));
 
             $rules[] = "exists:{$foreignTable},id";
         }

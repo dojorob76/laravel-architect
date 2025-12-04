@@ -166,13 +166,13 @@ test('generates type specific validation', function () {
 test('generates composite unique validation closure', function () {
     $schema = json_encode([
         ['name' => 'email', 'type' => 'string', 'required' => true],
-        ['name' => 'tenant_id', 'type' => 'unsignedBigInteger', 'required' => true],
+        ['name' => 'category_id', 'type' => 'unsignedBigInteger', 'required' => true],
     ]);
 
     Artisan::call('make:api-request', [
         'name' => 'User',
         '--schema' => $schema,
-        '--composite-unique' => '[["email","tenant_id"]]'
+        '--composite-unique' => '[["email","category_id"]]'
     ]);
 
     $content = $this->getGeneratedFileContent('requests', 'UserRequest.php');
@@ -181,7 +181,7 @@ test('generates composite unique validation closure', function () {
         ->and($content)->toContain('composite_unique_0')
         ->and($content)->toContain("\\DB::table('users')")
         ->and($content)->toContain("->where('email', \$this->input('email'))")
-        ->and($content)->toContain("->where('tenant_id', \$this->input('tenant_id'))");
+        ->and($content)->toContain("->where('category_id', \$this->input('category_id'))");
 });
 
 test('composite unique validation handles multiple constraints', function () {
@@ -208,13 +208,13 @@ test('composite unique validation handles multiple constraints', function () {
 test('composite unique validation excludes current record on update', function () {
     $schema = json_encode([
         ['name' => 'email', 'type' => 'string', 'required' => true],
-        ['name' => 'tenant_id', 'type' => 'unsignedBigInteger', 'required' => true],
+        ['name' => 'category_id', 'type' => 'unsignedBigInteger', 'required' => true],
     ]);
 
     Artisan::call('make:api-request', [
         'name' => 'User',
         '--schema' => $schema,
-        '--composite-unique' => '[["email","tenant_id"]]'
+        '--composite-unique' => '[["email","category_id"]]'
     ]);
 
     $content = $this->getGeneratedFileContent('requests', 'UserRequest.php');

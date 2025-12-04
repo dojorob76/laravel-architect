@@ -173,22 +173,6 @@ test('includes batch soft delete tests when flag provided', function () {
         ->and($content)->toContain('can batch force delete');
 });
 
-test('includes multi tenant tests when flag provided', function () {
-    $schema = json_encode([
-        ['name' => 'name', 'type' => 'string', 'required' => true],
-    ]);
-
-    Artisan::call('make:api-test', [
-        'name' => 'Project',
-        '--schema' => $schema,
-        '--multi-tenant' => true
-    ]);
-
-    $content = $this->getGeneratedFileContent('tests', 'ProjectTest.php');
-
-    expect($content)->toContain('tenant');
-});
-
 test('test data generated from schema', function () {
     $schema = json_encode([
         ['name' => 'title', 'type' => 'string', 'required' => true],

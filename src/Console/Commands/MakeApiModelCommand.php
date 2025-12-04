@@ -11,7 +11,7 @@ class MakeApiModelCommand extends Command
 {
     use SchemaParserTrait;
 
-    protected $signature = 'make:api-model {name} {--schema=} {--pivot=false} {--soft-deletes} {--multi-tenant}';
+    protected $signature = 'make:api-model {name} {--schema=} {--pivot=false} {--soft-deletes}';
     protected $description = 'Create a new API Model';
 
     public function handle(Filesystem $files): void
@@ -21,14 +21,13 @@ class MakeApiModelCommand extends Command
         $isPivot = $this->option('pivot') === 'true';
 
         $className = Str::studly($name);
-        $tableName = $this->getTableName($name, $isPivot);
+        $tableName = $isPivot ? Str::snake($name) : $this->getTableName($name);
         $namespace = $this->getNamespace('models');
 
         $fillable = $this->buildFillableArray($schema);
         $relationships = $this->buildRelationships($schema, $namespace);
         $casts = $this->buildCasts($schema);
         $usesSoftDeletes = $this->option('soft-deletes') && !$isPivot;
-        $usesMultiTenant = $this->option('multi-tenant') && !$isPivot;
 
         $content = $this->processStub('model', [
             'namespace' => $namespace,
@@ -40,8 +39,6 @@ class MakeApiModelCommand extends Command
             'casts' => $casts,
             'uses_soft_deletes' => $usesSoftDeletes ? "use Illuminate\Database\Eloquent\SoftDeletes;\n" : '',
             'soft_deletes_trait' => $usesSoftDeletes ? "\n    use SoftDeletes;" : '',
-            'uses_multi_tenant' => $usesMultiTenant ? "use LaravelArchitect\\Traits\\MultiTenantTrait;\n" : '',
-            'multi_tenant_trait' => $usesMultiTenant ? "\n    use MultiTenantTrait;" : '',
         ]);
 
         $path = $this->getModelPath($className);

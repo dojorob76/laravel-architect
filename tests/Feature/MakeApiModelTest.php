@@ -84,16 +84,6 @@ test('creates model with soft deletes', function () {
     $this->assertFileContains('models', 'Video.php', 'use Illuminate\Database\Eloquent\SoftDeletes');
 });
 
-test('creates model with multi-tenancy', function () {
-    Artisan::call('make:api-model', [
-        'name' => 'Video',
-        '--multi-tenant' => true
-    ]);
-
-    $this->assertFileContains('models', 'Video.php', 'use MultiTenantTrait');
-    $this->assertFileContains('models', 'Video.php', 'use LaravelArchitect\Traits\MultiTenantTrait');
-});
-
 test('creates pivot model without timestamps', function () {
     Artisan::call('make:api-model', [
         'name' => 'tag_video',
