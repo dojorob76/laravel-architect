@@ -2,7 +2,7 @@
 
 use LaravelArchitect\Tests\TestCase;
 
-uses(TestCase::class)->in('Feature');
+uses(TestCase::class)->in('Feature', 'Unit');
 
 // Custom expectations
 expect()->extend('toBeValidPhpFile', function () {
