@@ -149,4 +149,121 @@ describe('TypeMappingHelper', function () {
             expect($casts['json'])->toBe('array');
         });
     });
+
+    describe('getValidationRule', function () {
+        test('returns string for string type', function () {
+            expect(TypeMappingHelper::getValidationRule('string'))->toBe('string');
+        });
+
+        test('returns string for text type', function () {
+            expect(TypeMappingHelper::getValidationRule('text'))->toBe('string');
+        });
+
+        test('returns email for email type', function () {
+            expect(TypeMappingHelper::getValidationRule('email'))->toBe('email');
+        });
+
+        test('returns integer for integer type', function () {
+            expect(TypeMappingHelper::getValidationRule('integer'))->toBe('integer');
+        });
+
+        test('returns integer for unsignedBigInteger type', function () {
+            expect(TypeMappingHelper::getValidationRule('unsignedBigInteger'))->toBe('integer');
+        });
+
+        test('returns integer for bigInteger type', function () {
+            expect(TypeMappingHelper::getValidationRule('bigInteger'))->toBe('integer');
+        });
+
+        test('returns boolean for boolean type', function () {
+            expect(TypeMappingHelper::getValidationRule('boolean'))->toBe('boolean');
+        });
+
+        test('returns numeric for decimal type', function () {
+            expect(TypeMappingHelper::getValidationRule('decimal'))->toBe('numeric');
+        });
+
+        test('returns numeric for float type', function () {
+            expect(TypeMappingHelper::getValidationRule('float'))->toBe('numeric');
+        });
+
+        test('returns numeric for double type', function () {
+            expect(TypeMappingHelper::getValidationRule('double'))->toBe('numeric');
+        });
+
+        test('returns date for date type', function () {
+            expect(TypeMappingHelper::getValidationRule('date'))->toBe('date');
+        });
+
+        test('returns date for datetime type', function () {
+            expect(TypeMappingHelper::getValidationRule('datetime'))->toBe('date');
+        });
+
+        test('returns date for timestamp type', function () {
+            expect(TypeMappingHelper::getValidationRule('timestamp'))->toBe('date');
+        });
+
+        test('returns array for json type', function () {
+            expect(TypeMappingHelper::getValidationRule('json'))->toBe('array');
+        });
+
+        test('returns string as default for unknown type', function () {
+            expect(TypeMappingHelper::getValidationRule('unknown'))->toBe('string');
+        });
+    });
+
+    describe('buildValidationRules', function () {
+        test('builds required rules for required field', function () {
+            $field = ['name' => 'title', 'type' => 'string', 'required' => true];
+            $rules = TypeMappingHelper::buildValidationRules($field);
+
+            expect($rules)->toContain('required');
+            expect($rules)->toContain('string');
+            expect($rules)->not->toContain('nullable');
+        });
+
+        test('builds nullable rules for optional field', function () {
+            $field = ['name' => 'description', 'type' => 'text'];
+            $rules = TypeMappingHelper::buildValidationRules($field);
+
+            expect($rules)->toContain('nullable');
+            expect($rules)->toContain('string');
+            expect($rules)->not->toContain('required');
+        });
+
+        test('uses correct type rule', function () {
+            $field = ['name' => 'email', 'type' => 'email', 'required' => true];
+            $rules = TypeMappingHelper::buildValidationRules($field);
+
+            expect($rules)->toContain('email');
+        });
+
+        test('defaults to string type when type is missing', function () {
+            $field = ['name' => 'field'];
+            $rules = TypeMappingHelper::buildValidationRules($field);
+
+            expect($rules)->toContain('string');
+        });
+    });
+
+    describe('getAllValidationRules', function () {
+        test('returns all validation mappings', function () {
+            $rules = TypeMappingHelper::getAllValidationRules();
+
+            expect($rules)->toBeArray();
+            expect($rules)->toHaveKey('string');
+            expect($rules)->toHaveKey('integer');
+            expect($rules)->toHaveKey('boolean');
+            expect($rules)->toHaveKey('email');
+        });
+
+        test('includes correct validation rules', function () {
+            $rules = TypeMappingHelper::getAllValidationRules();
+
+            expect($rules['string'])->toBe('string');
+            expect($rules['integer'])->toBe('integer');
+            expect($rules['email'])->toBe('email');
+            expect($rules['json'])->toBe('array');
+        });
+    });
 });

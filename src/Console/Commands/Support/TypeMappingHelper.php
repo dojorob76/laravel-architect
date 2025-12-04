@@ -37,6 +37,26 @@ class TypeMappingHelper
     ];
 
     /**
+     * Schema type to validation rule mapping
+     */
+    protected static array $validationMap = [
+        'string' => 'string',
+        'text' => 'string',
+        'email' => 'email',
+        'integer' => 'integer',
+        'unsignedBigInteger' => 'integer',
+        'bigInteger' => 'integer',
+        'boolean' => 'boolean',
+        'decimal' => 'numeric',
+        'float' => 'numeric',
+        'double' => 'numeric',
+        'date' => 'date',
+        'datetime' => 'date',
+        'timestamp' => 'date',
+        'json' => 'array',
+    ];
+
+    /**
      * Get Eloquent cast type for a schema type
      */
     public static function getCast(string $type): ?string
@@ -66,5 +86,44 @@ class TypeMappingHelper
     public static function getAllCasts(): array
     {
         return array_filter(self::$castMap, fn($cast) => $cast !== null);
+    }
+
+    /**
+     * Get validation rule for a schema type
+     */
+    public static function getValidationRule(string $type): string
+    {
+        return self::$validationMap[$type] ?? 'string';
+    }
+
+    /**
+     * Build complete validation rules array for a field
+     *
+     * @param array $field Schema field definition
+     * @return array Validation rules array
+     */
+    public static function buildValidationRules(array $field): array
+    {
+        $rules = [];
+
+        // Required or nullable
+        if ($field['required'] ?? false) {
+            $rules[] = 'required';
+        } else {
+            $rules[] = 'nullable';
+        }
+
+        // Type-based rule
+        $rules[] = self::getValidationRule($field['type'] ?? 'string');
+
+        return $rules;
+    }
+
+    /**
+     * Get all validation mappings
+     */
+    public static function getAllValidationRules(): array
+    {
+        return self::$validationMap;
     }
 }

@@ -5,6 +5,7 @@ namespace LaravelArchitect\Console\Commands;
 use Illuminate\Console\Command;
 use Illuminate\Filesystem\Filesystem;
 use LaravelArchitect\Console\Commands\Traits\SchemaParserTrait;
+use LaravelArchitect\Console\Commands\Support\TypeMappingHelper;
 use Illuminate\Support\Str;
 
 class MakeApiRequestCommand extends Command
@@ -94,7 +95,7 @@ class MakeApiRequestCommand extends Command
         }
 
         $type = $col['type'] ?? 'string';
-        $rules = array_merge($rules, $this->getTypeValidationRules($type));
+        $rules[] = TypeMappingHelper::getValidationRule($type);
 
         if ($col['unique'] ?? false) {
             $tableName = Str::snake(Str::plural($col['table'] ?? 'table'));
@@ -110,20 +111,5 @@ class MakeApiRequestCommand extends Command
         }
 
         return array_unique($rules);
-    }
-
-    protected function getTypeValidationRules(string $type): array
-    {
-        return match($type) {
-            'string', 'text' => ['string'],
-            'integer', 'unsignedBigInteger', 'bigInteger' => ['integer'],
-            'boolean' => ['boolean'],
-            'date' => ['date'],
-            'datetime', 'timestamp' => ['date'],
-            'email' => ['email'],
-            'decimal', 'float', 'double' => ['numeric'],
-            'json' => ['array'],
-            default => ['string']
-        };
     }
 }
