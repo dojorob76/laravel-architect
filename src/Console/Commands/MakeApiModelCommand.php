@@ -5,6 +5,7 @@ namespace LaravelArchitect\Console\Commands;
 use Illuminate\Console\Command;
 use Illuminate\Filesystem\Filesystem;
 use LaravelArchitect\Console\Commands\Traits\SchemaParserTrait;
+use LaravelArchitect\Console\Commands\Support\TypeMappingHelper;
 use Illuminate\Support\Str;
 
 class MakeApiModelCommand extends Command
@@ -96,25 +97,12 @@ PHP;
         $casts = [];
 
         foreach ($schema as $col) {
-            $cast = $this->determineCast($col['type'] ?? 'string');
+            $cast = TypeMappingHelper::getCast($col['type'] ?? 'string');
             if ($cast) {
                 $casts[] = "        '{$col['name']}' => '{$cast}'";
             }
         }
 
         return empty($casts) ? '' : implode(",\n", $casts);
-    }
-
-    protected function determineCast(string $type): ?string
-    {
-        return match($type) {
-            'boolean' => 'boolean',
-            'integer', 'unsignedBigInteger', 'bigInteger' => 'integer',
-            'decimal', 'float', 'double' => 'decimal:2',
-            'date' => 'date',
-            'datetime', 'timestamp' => 'datetime',
-            'json' => 'array',
-            default => null
-        };
     }
 }
