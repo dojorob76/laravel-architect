@@ -1,10 +1,11 @@
 <?php
 
 use Illuminate\Support\Facades\Artisan;
+use LaravelArchitect\Console\Commands\Support\ConfigHelper;
 use Illuminate\Support\Facades\File;
 
 beforeEach(function () {
-    $controllersPath = base_path(config('api_scaffolding.paths.controllers'));
+    $controllersPath = ConfigHelper::basePath('controllers');
     File::ensureDirectoryExists($controllersPath);
 });
 
@@ -51,7 +52,7 @@ test('controller uses config for status codes', function () {
 
     $content = $this->getGeneratedFileContent('controllers', 'VideoController.php');
 
-    expect($content)->toContain("config('api_scaffolding.status_codes")
+    expect($content)->toContain('ConfigHelper::statusCode')
         ->and($content)->not->toContain('->setStatusCode(200)')
         ->and($content)->not->toContain('->setStatusCode(201)');
 });

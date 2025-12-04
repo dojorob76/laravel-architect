@@ -1,6 +1,7 @@
 <?php
 
 namespace LaravelArchitect\Tests;
+use LaravelArchitect\Console\Commands\Support\ConfigHelper;
 
 use Illuminate\Support\Facades\File;
 use LaravelArchitect\LaravelArchitectServiceProvider;
@@ -127,7 +128,7 @@ class TestCase extends Orchestra
 
     protected function cleanupGeneratedFiles(): void
     {
-        $configPaths = config('api_scaffolding.paths');
+        $configPaths = ConfigHelper::paths();
 
         foreach ($configPaths as $key => $path) {
             if ($key === 'routes') {
@@ -144,7 +145,7 @@ class TestCase extends Orchestra
 
     protected function getGeneratedFilePath(string $type, string $filename): string
     {
-        $path = config("api_scaffolding.paths.{$type}");
+        $path = ConfigHelper::path($type);
         return base_path("{$path}/{$filename}");
     }
 
@@ -194,7 +195,7 @@ class TestCase extends Orchestra
 
     protected function findMigrationFile(string $tableName): ?string
     {
-        $migrationPath = base_path(config('api_scaffolding.paths.migrations'));
+        $migrationPath = ConfigHelper::basePath('migrations');
 
         if (!File::exists($migrationPath)) {
             return null;

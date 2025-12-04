@@ -5,6 +5,7 @@ namespace LaravelArchitect\Console\Commands;
 use Illuminate\Console\Command;
 use Illuminate\Filesystem\Filesystem;
 use LaravelArchitect\Console\Commands\Traits\SchemaParserTrait;
+use LaravelArchitect\Console\Commands\Support\ConfigHelper;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\File;
 
@@ -241,7 +242,7 @@ class MakeApiMigrationCommand extends Command
             return true;
         }
 
-        $migrationsPath = base_path(config('api_scaffolding.paths.migrations'));
+        $migrationsPath = ConfigHelper::basePath('migrations');
         $pluralTableName = Str::plural($tableName);
 
         if (File::exists($migrationsPath)) {

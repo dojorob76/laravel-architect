@@ -4,6 +4,7 @@ namespace LaravelArchitect\Console\Commands\Traits;
 
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Str;
+use LaravelArchitect\Console\Commands\Support\ConfigHelper;
 
 trait SchemaParserTrait
 {
@@ -69,7 +70,7 @@ trait SchemaParserTrait
      */
     protected function getNamespace(string $component): string
     {
-        return config("api_scaffolding.namespaces.{$component}");
+        return ConfigHelper::namespace($component);
     }
 
     /**
@@ -80,7 +81,7 @@ trait SchemaParserTrait
      */
     protected function getPath(string $component): string
     {
-        return base_path(config("api_scaffolding.paths.{$component}"));
+        return ConfigHelper::basePath($component);
     }
 
     /**

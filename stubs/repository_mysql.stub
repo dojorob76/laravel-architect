@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Pagination\LengthAwarePaginator;
+use LaravelArchitect\Console\Commands\Support\ConfigHelper;
 
 class MySQL{{ class }}Repository extends BaseMySQLRepository implements {{ class }}RepositoryInterface
 {
@@ -22,7 +23,7 @@ class MySQL{{ class }}Repository extends BaseMySQLRepository implements {{ class
 
     public function paginate(?int $perPage = null): LengthAwarePaginator
     {
-        $limit = $perPage ?? config('api_scaffolding.response_settings.pagination_limit', 15);
+        $limit = $perPage ?? ConfigHelper::paginationLimit();
         $page = LengthAwarePaginator::resolveCurrentPage();
         $offset = ($page - 1) * $limit;
 
@@ -127,7 +128,7 @@ class MySQL{{ class }}Repository extends BaseMySQLRepository implements {{ class
 
         $whereString = implode(' AND ', $whereClauses);
 
-        $limit = $perPage ?? config('api_scaffolding.response_settings.pagination_limit', 15);
+        $limit = $perPage ?? ConfigHelper::paginationLimit();
         $page = LengthAwarePaginator::resolveCurrentPage();
         $offset = ($page - 1) * $limit;
 
