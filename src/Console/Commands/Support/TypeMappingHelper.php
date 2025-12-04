@@ -100,7 +100,7 @@ class TypeMappingHelper
         'image' => 'fake()->imageUrl()',
         'avatar' => 'fake()->imageUrl(64, 64)',
         'password' => 'bcrypt(fake()->password())',
-        'token' => 'Str::random(60)',
+        'token' => '\\Illuminate\\Support\\Str::random(60)',
         'user_agent' => 'fake()->userAgent()',
         'color' => 'fake()->hexColor()',
         'company' => 'fake()->company()',
