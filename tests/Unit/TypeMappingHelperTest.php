@@ -266,4 +266,155 @@ describe('TypeMappingHelper', function () {
             expect($rules['json'])->toBe('array');
         });
     });
+
+    describe('getFakerMethod', function () {
+        test('returns word for string type', function () {
+            expect(TypeMappingHelper::getFakerMethod('string'))->toBe('fake()->word()');
+        });
+
+        test('returns paragraph for text type', function () {
+            expect(TypeMappingHelper::getFakerMethod('text'))->toBe('fake()->paragraph()');
+        });
+
+        test('returns safeEmail for email type', function () {
+            expect(TypeMappingHelper::getFakerMethod('email'))->toBe('fake()->safeEmail()');
+        });
+
+        test('returns numberBetween for integer type', function () {
+            expect(TypeMappingHelper::getFakerMethod('integer'))->toBe('fake()->numberBetween(1, 1000)');
+        });
+
+        test('returns numberBetween for unsignedBigInteger type', function () {
+            expect(TypeMappingHelper::getFakerMethod('unsignedBigInteger'))->toBe('fake()->numberBetween(1, 1000)');
+        });
+
+        test('returns boolean for boolean type', function () {
+            expect(TypeMappingHelper::getFakerMethod('boolean'))->toBe('fake()->boolean()');
+        });
+
+        test('returns randomFloat for decimal type', function () {
+            expect(TypeMappingHelper::getFakerMethod('decimal'))->toBe('fake()->randomFloat(2, 0, 1000)');
+        });
+
+        test('returns randomFloat for float type', function () {
+            expect(TypeMappingHelper::getFakerMethod('float'))->toBe('fake()->randomFloat(2, 0, 1000)');
+        });
+
+        test('returns date for date type', function () {
+            expect(TypeMappingHelper::getFakerMethod('date'))->toBe('fake()->date()');
+        });
+
+        test('returns dateTime for datetime type', function () {
+            expect(TypeMappingHelper::getFakerMethod('datetime'))->toBe('fake()->dateTime()');
+        });
+
+        test('returns dateTime for timestamp type', function () {
+            expect(TypeMappingHelper::getFakerMethod('timestamp'))->toBe('fake()->dateTime()');
+        });
+
+        test('returns array for json type', function () {
+            expect(TypeMappingHelper::getFakerMethod('json'))->toContain('fake()->word()');
+        });
+
+        test('returns word for unknown type', function () {
+            expect(TypeMappingHelper::getFakerMethod('unknown'))->toBe('fake()->word()');
+        });
+    });
+
+    describe('getSemanticFakerMethod', function () {
+        test('returns safeEmail for email column', function () {
+            expect(TypeMappingHelper::getSemanticFakerMethod('user_email'))->toBe('fake()->safeEmail()');
+        });
+
+        test('returns phoneNumber for phone column', function () {
+            expect(TypeMappingHelper::getSemanticFakerMethod('phone_number'))->toBe('fake()->phoneNumber()');
+        });
+
+        test('returns words for name column', function () {
+            expect(TypeMappingHelper::getSemanticFakerMethod('first_name'))->toBe('fake()->words(3, true)');
+        });
+
+        test('returns words for title column', function () {
+            expect(TypeMappingHelper::getSemanticFakerMethod('post_title'))->toBe('fake()->words(3, true)');
+        });
+
+        test('returns paragraph for description column', function () {
+            expect(TypeMappingHelper::getSemanticFakerMethod('description'))->toBe('fake()->paragraph()');
+        });
+
+        test('returns url for url column', function () {
+            expect(TypeMappingHelper::getSemanticFakerMethod('website_url'))->toBe('fake()->url()');
+        });
+
+        test('returns address for address column', function () {
+            expect(TypeMappingHelper::getSemanticFakerMethod('home_address'))->toBe('fake()->address()');
+        });
+
+        test('returns city for city column', function () {
+            expect(TypeMappingHelper::getSemanticFakerMethod('city'))->toBe('fake()->city()');
+        });
+
+        test('returns country for country column', function () {
+            expect(TypeMappingHelper::getSemanticFakerMethod('country'))->toBe('fake()->country()');
+        });
+
+        test('returns postcode for zip column', function () {
+            expect(TypeMappingHelper::getSemanticFakerMethod('zip_code'))->toBe('fake()->postcode()');
+        });
+
+        test('returns null for non-semantic column', function () {
+            expect(TypeMappingHelper::getSemanticFakerMethod('quantity'))->toBeNull();
+        });
+    });
+
+    describe('getBestFakerMethod', function () {
+        test('prefers semantic match over type', function () {
+            // Column named 'email' with type 'string' should get email faker
+            expect(TypeMappingHelper::getBestFakerMethod('string', 'email'))->toBe('fake()->safeEmail()');
+        });
+
+        test('prefers semantic match for phone over string type', function () {
+            expect(TypeMappingHelper::getBestFakerMethod('string', 'phone_number'))->toBe('fake()->phoneNumber()');
+        });
+
+        test('falls back to type when no semantic match', function () {
+            expect(TypeMappingHelper::getBestFakerMethod('integer', 'quantity'))->toBe('fake()->numberBetween(1, 1000)');
+        });
+
+        test('uses type when column name is null', function () {
+            expect(TypeMappingHelper::getBestFakerMethod('boolean', null))->toBe('fake()->boolean()');
+        });
+
+        test('uses semantic match for description', function () {
+            expect(TypeMappingHelper::getBestFakerMethod('text', 'description'))->toBe('fake()->paragraph()');
+        });
+    });
+
+    describe('getSemanticPatterns', function () {
+        test('returns array of semantic patterns', function () {
+            $patterns = TypeMappingHelper::getSemanticPatterns();
+
+            expect($patterns)->toBeArray();
+            expect($patterns)->toContain('email', 'phone', 'address', 'city');
+        });
+    });
+
+    describe('getAllFakerMethods', function () {
+        test('returns all faker mappings', function () {
+            $fakers = TypeMappingHelper::getAllFakerMethods();
+
+            expect($fakers)->toBeArray();
+            expect($fakers)->toHaveKey('string');
+            expect($fakers)->toHaveKey('integer');
+            expect($fakers)->toHaveKey('boolean');
+        });
+
+        test('includes correct faker methods', function () {
+            $fakers = TypeMappingHelper::getAllFakerMethods();
+
+            expect($fakers['string'])->toBe('fake()->word()');
+            expect($fakers['email'])->toBe('fake()->safeEmail()');
+            expect($fakers['boolean'])->toBe('fake()->boolean()');
+        });
+    });
 });

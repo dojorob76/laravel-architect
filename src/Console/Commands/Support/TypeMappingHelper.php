@@ -57,6 +57,57 @@ class TypeMappingHelper
     ];
 
     /**
+     * Schema type to Faker method mapping
+     */
+    protected static array $fakerMap = [
+        'string' => 'fake()->word()',
+        'text' => 'fake()->paragraph()',
+        'email' => 'fake()->safeEmail()',
+        'integer' => 'fake()->numberBetween(1, 1000)',
+        'unsignedBigInteger' => 'fake()->numberBetween(1, 1000)',
+        'bigInteger' => 'fake()->numberBetween(1, 1000)',
+        'boolean' => 'fake()->boolean()',
+        'decimal' => 'fake()->randomFloat(2, 0, 1000)',
+        'float' => 'fake()->randomFloat(2, 0, 1000)',
+        'double' => 'fake()->randomFloat(2, 0, 1000)',
+        'date' => 'fake()->date()',
+        'datetime' => 'fake()->dateTime()',
+        'timestamp' => 'fake()->dateTime()',
+        'json' => "['key' => fake()->word()]",
+    ];
+
+    /**
+     * Semantic column name patterns to Faker methods
+     * Order matters: more specific patterns should come first
+     */
+    protected static array $semanticFakerMap = [
+        'email' => 'fake()->safeEmail()',
+        'phone' => 'fake()->phoneNumber()',
+        'zip' => 'fake()->postcode()',
+        'postal' => 'fake()->postcode()',
+        'address' => 'fake()->address()',
+        'city' => 'fake()->city()',
+        'country' => 'fake()->country()',
+        'url' => 'fake()->url()',
+        'link' => 'fake()->url()',
+        'description' => 'fake()->paragraph()',
+        'content' => 'fake()->paragraph()',
+        'body' => 'fake()->paragraph()',
+        'title' => 'fake()->words(3, true)',
+        'name' => 'fake()->words(3, true)',
+        'slug' => 'fake()->slug()',
+        'uuid' => 'fake()->uuid()',
+        'image' => 'fake()->imageUrl()',
+        'avatar' => 'fake()->imageUrl(64, 64)',
+        'password' => 'bcrypt(fake()->password())',
+        'token' => 'Str::random(60)',
+        'user_agent' => 'fake()->userAgent()',
+        'color' => 'fake()->hexColor()',
+        'company' => 'fake()->company()',
+        'ip' => 'fake()->ipv4()',
+    ];
+
+    /**
      * Get Eloquent cast type for a schema type
      */
     public static function getCast(string $type): ?string
@@ -125,5 +176,64 @@ class TypeMappingHelper
     public static function getAllValidationRules(): array
     {
         return self::$validationMap;
+    }
+
+    /**
+     * Get Faker method for a schema type
+     */
+    public static function getFakerMethod(string $type): string
+    {
+        return self::$fakerMap[$type] ?? 'fake()->word()';
+    }
+
+    /**
+     * Get semantic Faker method based on column name
+     * Returns null if no semantic match found
+     */
+    public static function getSemanticFakerMethod(string $columnName): ?string
+    {
+        $lowerName = strtolower($columnName);
+
+        // Check each pattern in order
+        foreach (self::$semanticFakerMap as $pattern => $faker) {
+            if (str_contains($lowerName, $pattern)) {
+                return $faker;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Get best Faker method considering both column name and type
+     */
+    public static function getBestFakerMethod(string $type, ?string $columnName = null): string
+    {
+        // First try semantic matching based on column name
+        if ($columnName !== null) {
+            $semantic = self::getSemanticFakerMethod($columnName);
+            if ($semantic !== null) {
+                return $semantic;
+            }
+        }
+
+        // Fall back to type-based faker
+        return self::getFakerMethod($type);
+    }
+
+    /**
+     * Get all semantic faker patterns
+     */
+    public static function getSemanticPatterns(): array
+    {
+        return array_keys(self::$semanticFakerMap);
+    }
+
+    /**
+     * Get all faker mappings
+     */
+    public static function getAllFakerMethods(): array
+    {
+        return self::$fakerMap;
     }
 }
