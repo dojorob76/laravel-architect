@@ -283,4 +283,114 @@ class TypeMappingHelper
 
         return $imports;
     }
+
+    /**
+     * Schema type to test value mapping (for create operations)
+     */
+    protected static array $testValueMap = [
+        'string' => "'Test String'",
+        'text' => "'Test text content'",
+        'email' => "'test@example.com'",
+        'integer' => '100',
+        'unsignedBigInteger' => '100',
+        'bigInteger' => '100',
+        'boolean' => 'true',
+        'decimal' => '100.50',
+        'float' => '100.50',
+        'double' => '100.50',
+        'date' => "'2024-01-01'",
+        'datetime' => "'2024-01-01 12:00:00'",
+        'timestamp' => "'2024-01-01 12:00:00'",
+        'json' => "['key' => 'value']",
+    ];
+
+    /**
+     * Schema type to updated test value mapping (for update operations)
+     */
+    protected static array $updateTestValueMap = [
+        'string' => "'Test String Updated'",
+        'text' => "'Test text content Updated'",
+        'email' => "'testUpdated@example.com'",
+        'integer' => '200',
+        'unsignedBigInteger' => '200',
+        'bigInteger' => '200',
+        'boolean' => 'false',
+        'decimal' => '200.50',
+        'float' => '200.50',
+        'double' => '200.50',
+        'date' => "'2024-02-01'",
+        'datetime' => "'2024-02-01 12:00:00'",
+        'timestamp' => "'2024-02-01 12:00:00'",
+        'json' => "['updated' => true]",
+    ];
+
+    /**
+     * Schema type to invalid test value mapping (for validation tests)
+     */
+    protected static array $invalidTestValueMap = [
+        'string' => '12345',
+        'text' => '12345',
+        'email' => "'not-an-email'",
+        'integer' => "'not-an-integer'",
+        'unsignedBigInteger' => "'not-an-integer'",
+        'bigInteger' => "'not-an-integer'",
+        'boolean' => "'not-a-boolean'",
+        'decimal' => "'not-a-number'",
+        'float' => "'not-a-number'",
+        'double' => "'not-a-number'",
+        'date' => "'not-a-date'",
+        'datetime' => "'not-a-datetime'",
+        'timestamp' => "'not-a-timestamp'",
+        'json' => "'not-valid-json'",
+    ];
+
+    /**
+     * Get test value for a schema type
+     */
+    public static function getTestValue(string $type, bool $isUpdate = false): string
+    {
+        if ($isUpdate) {
+            return self::$updateTestValueMap[$type] ?? "'Test Value Updated'";
+        }
+        return self::$testValueMap[$type] ?? "'Test Value'";
+    }
+
+    /**
+     * Get invalid test value for validation testing
+     */
+    public static function getInvalidTestValue(string $type): string
+    {
+        return self::$invalidTestValueMap[$type] ?? 'null';
+    }
+
+    /**
+     * Build test data array for a set of fields
+     *
+     * @param array $fields Schema fields
+     * @param bool $isUpdate Whether this is update data
+     * @return array Field name => test value mapping
+     */
+    public static function buildTestData(array $fields, bool $isUpdate = false): array
+    {
+        $data = [];
+        foreach ($fields as $field) {
+            $name = $field['name'];
+            $type = $field['type'] ?? 'string';
+            $data[$name] = self::getTestValue($type, $isUpdate);
+        }
+        return $data;
+    }
+
+    /**
+     * Build partial update test data (subset of fields)
+     *
+     * @param array $fields Schema fields
+     * @param int $count Number of fields to include
+     * @return array Field name => test value mapping
+     */
+    public static function buildPartialTestData(array $fields, int $count = 1): array
+    {
+        $subset = array_slice($fields, 0, $count);
+        return self::buildTestData($subset, true);
+    }
 }

@@ -460,4 +460,115 @@ describe('TypeMappingHelper', function () {
             expect($imports)->toBeEmpty();
         });
     });
+
+    describe('getTestValue', function () {
+        describe('create values', function () {
+            test('returns string test value', function () {
+                expect(TypeMappingHelper::getTestValue('string'))->toBe("'Test String'");
+            });
+
+            test('returns text test value', function () {
+                expect(TypeMappingHelper::getTestValue('text'))->toBe("'Test text content'");
+            });
+
+            test('returns email test value', function () {
+                expect(TypeMappingHelper::getTestValue('email'))->toBe("'test@example.com'");
+            });
+
+            test('returns integer test value', function () {
+                expect(TypeMappingHelper::getTestValue('integer'))->toBe('100');
+            });
+
+            test('returns boolean test value', function () {
+                expect(TypeMappingHelper::getTestValue('boolean'))->toBe('true');
+            });
+
+            test('returns decimal test value', function () {
+                expect(TypeMappingHelper::getTestValue('decimal'))->toBe('100.50');
+            });
+
+            test('returns date test value', function () {
+                expect(TypeMappingHelper::getTestValue('date'))->toBe("'2024-01-01'");
+            });
+
+            test('returns json test value', function () {
+                expect(TypeMappingHelper::getTestValue('json'))->toBe("['key' => 'value']");
+            });
+
+            test('returns default for unknown type', function () {
+                expect(TypeMappingHelper::getTestValue('unknown'))->toBe("'Test Value'");
+            });
+        });
+
+        describe('update values', function () {
+            test('returns updated string value', function () {
+                expect(TypeMappingHelper::getTestValue('string', true))->toContain('Updated');
+            });
+
+            test('returns different integer for update', function () {
+                expect(TypeMappingHelper::getTestValue('integer', true))->toBe('200');
+            });
+
+            test('returns opposite boolean for update', function () {
+                expect(TypeMappingHelper::getTestValue('boolean', true))->toBe('false');
+            });
+        });
+    });
+
+    describe('getInvalidTestValue', function () {
+        test('returns non-email string for email type', function () {
+            expect(TypeMappingHelper::getInvalidTestValue('email'))->toBe("'not-an-email'");
+        });
+
+        test('returns string for integer type', function () {
+            expect(TypeMappingHelper::getInvalidTestValue('integer'))->toBe("'not-an-integer'");
+        });
+
+        test('returns invalid date format for date type', function () {
+            expect(TypeMappingHelper::getInvalidTestValue('date'))->toBe("'not-a-date'");
+        });
+    });
+
+    describe('buildTestData', function () {
+        test('builds array of test values for fields', function () {
+            $fields = [
+                ['name' => 'title', 'type' => 'string'],
+                ['name' => 'count', 'type' => 'integer'],
+            ];
+
+            $data = TypeMappingHelper::buildTestData($fields);
+
+            expect($data)->toHaveKey('title');
+            expect($data)->toHaveKey('count');
+            expect($data['title'])->toBe("'Test String'");
+            expect($data['count'])->toBe('100');
+        });
+
+        test('builds update values when isUpdate is true', function () {
+            $fields = [
+                ['name' => 'title', 'type' => 'string'],
+            ];
+
+            $data = TypeMappingHelper::buildTestData($fields, true);
+
+            expect($data['title'])->toContain('Updated');
+        });
+    });
+
+    describe('buildPartialTestData', function () {
+        test('returns subset of fields', function () {
+            $fields = [
+                ['name' => 'field1', 'type' => 'string'],
+                ['name' => 'field2', 'type' => 'string'],
+                ['name' => 'field3', 'type' => 'string'],
+            ];
+
+            $data = TypeMappingHelper::buildPartialTestData($fields, 2);
+
+            expect($data)->toHaveCount(2);
+            expect($data)->toHaveKey('field1');
+            expect($data)->toHaveKey('field2');
+            expect($data)->not->toHaveKey('field3');
+        });
+    });
 });
