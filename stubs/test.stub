@@ -2,6 +2,7 @@
 
 use {{ model_namespace }}\{{ class }};
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use LaravelArchitect\Console\Commands\Support\ConfigHelper;
 
 uses(RefreshDatabase::class);
 
@@ -19,7 +20,7 @@ describe('{{ class }} Listing', function () {
 
         $response = $this->getJson('/api/{{ route }}');
 
-        $response->assertStatus(\LaravelArchitect\Console\Commands\Support\ConfigHelper::statusCode('success'))
+        $response->assertStatus(ConfigHelper::statusCode('success'))
             ->assertJsonStructure([
                 'data' => [
                     '*' => ['id']
@@ -45,7 +46,7 @@ describe('{{ class }} Listing', function () {
 
         $response = $this->getJson('/api/{{ route }}?per_page=10');
 
-        $response->assertStatus(\LaravelArchitect\Console\Commands\Support\ConfigHelper::statusCode('success'))
+        $response->assertStatus(ConfigHelper::statusCode('success'))
             ->assertJsonPath('meta.per_page', 10)
             ->assertJsonPath('meta.total', 25);
 
@@ -58,7 +59,7 @@ describe('{{ class }} Listing', function () {
 
         $response = $this->getJson('/api/{{ route }}?search=Searchable');
 
-        $response->assertStatus(\LaravelArchitect\Console\Commands\Support\ConfigHelper::statusCode('success'));
+        $response->assertStatus(ConfigHelper::statusCode('success'));
         expect($response->json('meta.total'))->toBe(1);
     });
 });
@@ -71,7 +72,7 @@ describe('{{ class }} Creation', function () {
 
         $response = $this->postJson('/api/{{ route }}', $data);
 
-        $response->assertStatus(\LaravelArchitect\Console\Commands\Support\ConfigHelper::statusCode('created'))
+        $response->assertStatus(ConfigHelper::statusCode('created'))
             ->assertJsonStructure([
                 'data' => ['id']
             ]);
@@ -82,7 +83,7 @@ describe('{{ class }} Creation', function () {
     test('validates required fields when creating {{ singular_route }}', function () {
         $response = $this->postJson('/api/{{ route }}', []);
 
-        $response->assertStatus(\LaravelArchitect\Console\Commands\Support\ConfigHelper::statusCode('unprocessable_entity'))
+        $response->assertStatus(ConfigHelper::statusCode('unprocessable_entity'))
             ->assertJsonValidationErrors([
 {{ required_fields }}
             ]);
@@ -95,7 +96,7 @@ describe('{{ class }} Creation', function () {
 
         $response = $this->postJson('/api/{{ route }}', $data);
 
-        $response->assertStatus(\LaravelArchitect\Console\Commands\Support\ConfigHelper::statusCode('unprocessable_entity'))
+        $response->assertStatus(ConfigHelper::statusCode('unprocessable_entity'))
             ->assertJsonStructure(['message', 'errors']);
     });
 });
@@ -106,7 +107,7 @@ describe('{{ class }} Retrieval', function () {
 
         $response = $this->getJson("/api/{{ route }}/{$record->id}");
 
-        $response->assertStatus(\LaravelArchitect\Console\Commands\Support\ConfigHelper::statusCode('success'))
+        $response->assertStatus(ConfigHelper::statusCode('success'))
             ->assertJsonStructure(['data' => ['id']])
             ->assertJson([
                 'data' => [
@@ -118,9 +119,9 @@ describe('{{ class }} Retrieval', function () {
     test('returns 404 when {{ singular_route }} not found', function () {
         $response = $this->getJson('/api/{{ route }}/99999');
 
-        $response->assertStatus(\LaravelArchitect\Console\Commands\Support\ConfigHelper::statusCode('not_found'))
+        $response->assertStatus(ConfigHelper::statusCode('not_found'))
             ->assertJson([
-                'message' => \LaravelArchitect\Console\Commands\Support\ConfigHelper::message('not_found')
+                'message' => ConfigHelper::message('not_found')
             ]);
     });
 });
@@ -135,7 +136,7 @@ describe('{{ class }} Update', function () {
 
         $response = $this->patchJson("/api/{{ route }}/{$record->id}", $updateData);
 
-        $response->assertStatus(\LaravelArchitect\Console\Commands\Support\ConfigHelper::statusCode('success'))
+        $response->assertStatus(ConfigHelper::statusCode('success'))
             ->assertJsonStructure(['data' => ['id']]);
 
         $this->assertDatabaseHas('{{ table }}', array_merge(['id' => $record->id], $updateData));
@@ -150,7 +151,7 @@ describe('{{ class }} Update', function () {
 
         $response = $this->patchJson("/api/{{ route }}/{$record->id}", $partialData);
 
-        $response->assertStatus(\LaravelArchitect\Console\Commands\Support\ConfigHelper::statusCode('success'));
+        $response->assertStatus(ConfigHelper::statusCode('success'));
 
         $this->assertDatabaseHas('{{ table }}', array_merge(['id' => $record->id], $partialData));
     });
@@ -158,7 +159,7 @@ describe('{{ class }} Update', function () {
     test('returns 404 when updating non-existent {{ singular_route }}', function () {
         $response = $this->patchJson('/api/{{ route }}/99999', [{{ search_field }} => 'test']);
 
-        $response->assertStatus(\LaravelArchitect\Console\Commands\Support\ConfigHelper::statusCode('not_found'));
+        $response->assertStatus(ConfigHelper::statusCode('not_found'));
     });
 });
 
@@ -168,7 +169,7 @@ describe('{{ class }} Deletion', function () {
 
         $response = $this->deleteJson("/api/{{ route }}/{$record->id}");
 
-        $response->assertStatus(\LaravelArchitect\Console\Commands\Support\ConfigHelper::statusCode('no_content'));
+        $response->assertStatus(ConfigHelper::statusCode('no_content'));
 
 {{ soft_delete_assertion }}
     });
@@ -176,7 +177,7 @@ describe('{{ class }} Deletion', function () {
     test('returns 404 when deleting non-existent {{ singular_route }}', function () {
         $response = $this->deleteJson('/api/{{ route }}/99999');
 
-        $response->assertStatus(\LaravelArchitect\Console\Commands\Support\ConfigHelper::statusCode('not_found'));
+        $response->assertStatus(ConfigHelper::statusCode('not_found'));
     });
 });
 
@@ -191,7 +192,7 @@ describe('{{ class }} Batch Operations', function () {
             'ids' => array_slice($ids, 0, 3)
         ]);
 
-        $response->assertStatus(\LaravelArchitect\Console\Commands\Support\ConfigHelper::statusCode('success'))
+        $response->assertStatus(ConfigHelper::statusCode('success'))
             ->assertJsonStructure(['data', 'count'])
             ->assertJsonPath('count', 3);
     });
@@ -205,7 +206,7 @@ describe('{{ class }} Batch Operations', function () {
             'records' => $records
         ]);
 
-        $response->assertStatus(\LaravelArchitect\Console\Commands\Support\ConfigHelper::statusCode('created'))
+        $response->assertStatus(ConfigHelper::statusCode('created'))
             ->assertJsonStructure(['data', 'count', 'message'])
             ->assertJsonPath('count', count($records));
 
@@ -224,7 +225,7 @@ describe('{{ class }} Batch Operations', function () {
             'records' => $records
         ]);
 
-        $response->assertStatus(\LaravelArchitect\Console\Commands\Support\ConfigHelper::statusCode('unprocessable_entity'));
+        $response->assertStatus(ConfigHelper::statusCode('unprocessable_entity'));
     });
 
     test('can batch update {{ route }}', function () {
@@ -241,7 +242,7 @@ describe('{{ class }} Batch Operations', function () {
             'records' => $updates
         ]);
 
-        $response->assertStatus(\LaravelArchitect\Console\Commands\Support\ConfigHelper::statusCode('success'))
+        $response->assertStatus(ConfigHelper::statusCode('success'))
             ->assertJsonPath('updated', 3);
 
         foreach ($updates as $update) {
@@ -257,7 +258,7 @@ describe('{{ class }} Batch Operations', function () {
             'ids' => $ids
         ]);
 
-        $response->assertStatus(\LaravelArchitect\Console\Commands\Support\ConfigHelper::statusCode('success'))
+        $response->assertStatus(ConfigHelper::statusCode('success'))
             ->assertJsonPath('deleted', 3);
 
         foreach ($ids as $id) {
@@ -274,7 +275,7 @@ describe('{{ class }} Edge Cases', function () {
 
         $response = $this->getJson('/api/{{ route }}?per_page=50&page=2');
 
-        $response->assertStatus(\LaravelArchitect\Console\Commands\Support\ConfigHelper::statusCode('success'))
+        $response->assertStatus(ConfigHelper::statusCode('success'))
             ->assertJsonPath('meta.current_page', 2)
             ->assertJsonPath('meta.total', 100);
 
@@ -284,7 +285,7 @@ describe('{{ class }} Edge Cases', function () {
     test('handles empty result set gracefully', function () {
         $response = $this->getJson('/api/{{ route }}');
 
-        $response->assertStatus(\LaravelArchitect\Console\Commands\Support\ConfigHelper::statusCode('success'))
+        $response->assertStatus(ConfigHelper::statusCode('success'))
             ->assertJsonPath('meta.total', 0);
 
         expect($response->json('data'))->toBeArray()->toBeEmpty();

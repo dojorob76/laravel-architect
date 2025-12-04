@@ -204,7 +204,7 @@ test('can restore soft-deleted {$singularRoute}', function () {
     
     \$response = \$this->postJson("/api/{$route}/{\$record->id}/restore");
     
-    \$response->assertStatus(\LaravelArchitect\Console\Commands\Support\ConfigHelper::statusCode('success'));
+    \$response->assertStatus(ConfigHelper::statusCode('success'));
     \$this->assertDatabaseHas('{$route}', [
         'id' => \$record->id,
         'deleted_at' => null
@@ -216,7 +216,7 @@ test('can force delete {$singularRoute}', function () {
     
     \$response = \$this->deleteJson("/api/{$route}/{\$record->id}/force");
     
-    \$response->assertStatus(\LaravelArchitect\Console\Commands\Support\ConfigHelper::statusCode('no_content'));
+    \$response->assertStatus(ConfigHelper::statusCode('no_content'));
     \$this->assertDatabaseMissing('{$route}', ['id' => \$record->id]);
 });
 PHP;
@@ -236,7 +236,7 @@ PHP;
             'ids' => \$ids
         ]);
         
-        \$response->assertStatus(\LaravelArchitect\Console\Commands\Support\ConfigHelper::statusCode('success'))
+        \$response->assertStatus(ConfigHelper::statusCode('success'))
             ->assertJsonPath('restored', 3);
         
         foreach (\$ids as \$id) {
@@ -255,7 +255,7 @@ PHP;
             'ids' => \$ids
         ]);
         
-        \$response->assertStatus(\LaravelArchitect\Console\Commands\Support\ConfigHelper::statusCode('success'))
+        \$response->assertStatus(ConfigHelper::statusCode('success'))
             ->assertJsonPath('deleted', 3);
         
         foreach (\$ids as \$id) {

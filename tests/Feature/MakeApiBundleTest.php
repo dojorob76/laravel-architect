@@ -10,7 +10,7 @@ beforeEach(function () {
                  'requests', 'resources', 'migrations', 'factories', 'tests'];
 
     foreach ($pathKeys as $key) {
-        $path = base_path(config("api_scaffolding.paths.{$key}"));
+        $path = ConfigHelper::basePath($key);
         File::ensureDirectoryExists($path);
     }
 });

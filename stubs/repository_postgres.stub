@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Pagination\LengthAwarePaginator;
+use LaravelArchitect\Console\Commands\Support\ConfigHelper;
 
 class Postgres{{ class }}Repository extends BasePostgresRepository implements {{ class }}RepositoryInterface
 {
@@ -22,7 +23,7 @@ class Postgres{{ class }}Repository extends BasePostgresRepository implements {{
 
     public function paginate(?int $perPage = null): LengthAwarePaginator
     {
-        $limit = $perPage ?? \LaravelArchitect\Console\Commands\Support\ConfigHelper::paginationLimit();
+        $limit = $perPage ?? ConfigHelper::paginationLimit();
         $page = LengthAwarePaginator::resolveCurrentPage();
         $offset = ($page - 1) * $limit;
 
@@ -123,7 +124,7 @@ class Postgres{{ class }}Repository extends BasePostgresRepository implements {{
 
         $whereString = implode(' AND ', $whereClauses);
 
-        $limit = $perPage ?? \LaravelArchitect\Console\Commands\Support\ConfigHelper::paginationLimit();
+        $limit = $perPage ?? ConfigHelper::paginationLimit();
         $page = LengthAwarePaginator::resolveCurrentPage();
         $offset = ($page - 1) * $limit;
 

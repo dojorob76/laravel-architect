@@ -9,6 +9,7 @@ use {{ resource_namespace }}\{{ class }}Resource;
 use {{ resource_namespace }}\{{ class }}Collection;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use LaravelArchitect\Console\Commands\Support\ConfigHelper;
 
 class {{ class }}Controller extends Controller
 {
@@ -34,7 +35,7 @@ class {{ class }}Controller extends Controller
 
         return (new {{ class }}Collection($data))
             ->response()
-            ->setStatusCode(\LaravelArchitect\Console\Commands\Support\ConfigHelper::statusCode('success'));
+            ->setStatusCode(ConfigHelper::statusCode('success'));
     }
 
     /**
@@ -46,8 +47,8 @@ class {{ class }}Controller extends Controller
 
         return (new {{ class }}Resource($data))
             ->response()
-            ->setStatusCode(\LaravelArchitect\Console\Commands\Support\ConfigHelper::statusCode('created'))
-            ->header('X-Message', \LaravelArchitect\Console\Commands\Support\ConfigHelper::message('created'));
+            ->setStatusCode(ConfigHelper::statusCode('created'))
+            ->header('X-Message', ConfigHelper::message('created'));
     }
 
     /**
@@ -59,13 +60,13 @@ class {{ class }}Controller extends Controller
 
         if (!$data) {
             return response()->json([
-                'message' => \LaravelArchitect\Console\Commands\Support\ConfigHelper::message('not_found')
-            ], \LaravelArchitect\Console\Commands\Support\ConfigHelper::statusCode('not_found'));
+                'message' => ConfigHelper::message('not_found')
+            ], ConfigHelper::statusCode('not_found'));
         }
 
         return (new {{ class }}Resource($data))
             ->response()
-            ->setStatusCode(\LaravelArchitect\Console\Commands\Support\ConfigHelper::statusCode('success'));
+            ->setStatusCode(ConfigHelper::statusCode('success'));
     }
 
     /**
@@ -77,16 +78,16 @@ class {{ class }}Controller extends Controller
 
         if (!$updated) {
             return response()->json([
-                'message' => \LaravelArchitect\Console\Commands\Support\ConfigHelper::message('not_found')
-            ], \LaravelArchitect\Console\Commands\Support\ConfigHelper::statusCode('not_found'));
+                'message' => ConfigHelper::message('not_found')
+            ], ConfigHelper::statusCode('not_found'));
         }
 
         $data = $this->service->findById($id);
 
         return (new {{ class }}Resource($data))
             ->response()
-            ->setStatusCode(\LaravelArchitect\Console\Commands\Support\ConfigHelper::statusCode('success'))
-            ->header('X-Message', \LaravelArchitect\Console\Commands\Support\ConfigHelper::message('updated'));
+            ->setStatusCode(ConfigHelper::statusCode('success'))
+            ->header('X-Message', ConfigHelper::message('updated'));
     }
 
     /**
@@ -98,13 +99,13 @@ class {{ class }}Controller extends Controller
 
         if (!$deleted) {
             return response()->json([
-                'message' => \LaravelArchitect\Console\Commands\Support\ConfigHelper::message('not_found')
-            ], \LaravelArchitect\Console\Commands\Support\ConfigHelper::statusCode('not_found'));
+                'message' => ConfigHelper::message('not_found')
+            ], ConfigHelper::statusCode('not_found'));
         }
 
         return response()->json([
-            'message' => \LaravelArchitect\Console\Commands\Support\ConfigHelper::message('deleted')
-        ], \LaravelArchitect\Console\Commands\Support\ConfigHelper::statusCode('no_content'));
+            'message' => ConfigHelper::message('deleted')
+        ], ConfigHelper::statusCode('no_content'));
     }
 
     /**
@@ -117,12 +118,12 @@ class {{ class }}Controller extends Controller
         if (!$restored) {
             return response()->json([
                 'message' => 'Resource not found or cannot be restored.'
-            ], \LaravelArchitect\Console\Commands\Support\ConfigHelper::statusCode('not_found'));
+            ], ConfigHelper::statusCode('not_found'));
         }
 
         return response()->json([
             'message' => 'Resource restored successfully.'
-        ], \LaravelArchitect\Console\Commands\Support\ConfigHelper::statusCode('success'));
+        ], ConfigHelper::statusCode('success'));
     }
 
     /**
@@ -134,13 +135,13 @@ class {{ class }}Controller extends Controller
 
         if (!$deleted) {
             return response()->json([
-                'message' => \LaravelArchitect\Console\Commands\Support\ConfigHelper::message('not_found')
-            ], \LaravelArchitect\Console\Commands\Support\ConfigHelper::statusCode('not_found'));
+                'message' => ConfigHelper::message('not_found')
+            ], ConfigHelper::statusCode('not_found'));
         }
 
         return response()->json([
             'message' => 'Resource permanently deleted.'
-        ], \LaravelArchitect\Console\Commands\Support\ConfigHelper::statusCode('no_content'));
+        ], ConfigHelper::statusCode('no_content'));
     }
 
     /**
@@ -158,7 +159,7 @@ class {{ class }}Controller extends Controller
         return response()->json([
             'data' => {{ class }}Resource::collection($data),
             'count' => $data->count()
-        ], \LaravelArchitect\Console\Commands\Support\ConfigHelper::statusCode('success'));
+        ], ConfigHelper::statusCode('success'));
     }
 
     /**
@@ -177,7 +178,7 @@ class {{ class }}Controller extends Controller
             'data' => {{ class }}Resource::collection($created),
             'count' => $created->count(),
             'message' => "{$created->count()} resources created successfully."
-        ], \LaravelArchitect\Console\Commands\Support\ConfigHelper::statusCode('created'));
+        ], ConfigHelper::statusCode('created'));
     }
 
     /**
@@ -195,7 +196,7 @@ class {{ class }}Controller extends Controller
         return response()->json([
             'updated' => $updated,
             'message' => "{$updated} resources updated successfully."
-        ], \LaravelArchitect\Console\Commands\Support\ConfigHelper::statusCode('success'));
+        ], ConfigHelper::statusCode('success'));
     }
 
     /**
@@ -213,7 +214,7 @@ class {{ class }}Controller extends Controller
         return response()->json([
             'deleted' => $deleted,
             'message' => "{$deleted} resources deleted successfully."
-        ], \LaravelArchitect\Console\Commands\Support\ConfigHelper::statusCode('success'));
+        ], ConfigHelper::statusCode('success'));
     }
 
     /**
@@ -231,7 +232,7 @@ class {{ class }}Controller extends Controller
         return response()->json([
             'restored' => $restored,
             'message' => "{$restored} resources restored successfully."
-        ], \LaravelArchitect\Console\Commands\Support\ConfigHelper::statusCode('success'));
+        ], ConfigHelper::statusCode('success'));
     }
 
     /**
@@ -249,6 +250,6 @@ class {{ class }}Controller extends Controller
         return response()->json([
             'deleted' => $deleted,
             'message' => "{$deleted} resources permanently deleted."
-        ], \LaravelArchitect\Console\Commands\Support\ConfigHelper::statusCode('success'));
+        ], ConfigHelper::statusCode('success'));
     }
 }
