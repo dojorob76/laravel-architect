@@ -5,6 +5,7 @@ namespace LaravelArchitect\Console\Commands\Traits;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Str;
 use LaravelArchitect\Console\Commands\Support\ConfigHelper;
+use LaravelArchitect\Console\Commands\Support\NamingConventionHelper;
 
 trait SchemaParserTrait
 {
@@ -120,7 +121,7 @@ trait SchemaParserTrait
      */
     protected function getTableName(string $name): string
     {
-        return \Illuminate\Support\Str::snake(\Illuminate\Support\Str::plural($name));
+        return NamingConventionHelper::modelToTableName($name);
     }
 
     /**
@@ -133,7 +134,7 @@ trait SchemaParserTrait
      */
     protected function extractForeignEntityName(string $columnName): string
     {
-        return str_replace('_id', '', $columnName);
+        return NamingConventionHelper::foreignKeyToEntityName($columnName);
     }
 
     /**
@@ -146,7 +147,7 @@ trait SchemaParserTrait
      */
     protected function getForeignModelName(string $columnName): string
     {
-        return \Illuminate\Support\Str::studly($this->extractForeignEntityName($columnName));
+        return NamingConventionHelper::foreignKeyToModel($columnName);
     }
 
     /**
@@ -391,7 +392,7 @@ trait SchemaParserTrait
      */
     protected function modelToForeignKeyColumn(string $modelName): string
     {
-        return Str::snake($modelName) . '_id';
+        return NamingConventionHelper::modelToForeignKey($modelName);
     }
 
     /**
@@ -402,17 +403,7 @@ trait SchemaParserTrait
      */
     protected function isValidModelName(string $modelName): bool
     {
-        // Must be StudlyCase (capital start, no underscores/spaces)
-        if (!preg_match('/^[A-Z][a-zA-Z0-9]*$/', $modelName)) {
-            return false;
-        }
-
-        // Check if accidentally plural (common mistake)
-        if (Str::plural($modelName) === $modelName && $modelName !== Str::singular($modelName)) {
-            return false;
-        }
-
-        return true;
+        return NamingConventionHelper::isValidModelName($modelName);
     }
 
     /**
@@ -481,13 +472,7 @@ trait SchemaParserTrait
      */
     protected function generatePivotTableName(string $model1, string $model2): string
     {
-        $singular1 = Str::snake($model1);
-        $singular2 = Str::snake($model2);
-
-        $tables = [$singular1, $singular2];
-        sort($tables); // Always alphabetical
-
-        return implode('_', $tables);
+        return NamingConventionHelper::generatePivotTableName($model1, $model2);
     }
 
     /**
