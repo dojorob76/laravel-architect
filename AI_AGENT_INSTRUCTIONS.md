@@ -166,9 +166,8 @@ You should ask:
 1. What fields does a blog post have?
 2. Does it belong to a user?
 3. Should it support soft deletes?
-4. Is this a multi-tenant application?
-5. Should posts have tags or categories?
-6. Do any fields need composite unique constraints?
+4. Should posts have tags or categories?
+5. Do any fields need composite unique constraints?
 ```
 
 ### Step 2: Design the Schema
@@ -366,65 +365,7 @@ $table->unique(['product_id', 'tag_id'], 'product_tag_composite_unique');  // Co
 
 ---
 
-### Scenario 4: Multi-Tenant Resource
-
-**User Request:**
-> "Create a Project API for a SaaS app where each tenant has their own projects"
-
-**Your Response:**
-
-```bash
-php artisan make:api-bundle Project \
-  --schema='[{"name":"name","type":"string","required":true},{"name":"description","type":"text"},{"name":"status","type":"string","required":true,"default":"active"}]' \
-  --multi-tenant \
-  --soft-deletes
-```
-
-Explain how it works:
-```markdown
-The `--multi-tenant` flag adds:
-- A `tenant_id` column to the migration
-- The `MultiTenantTrait` to the model
-- Automatic query scoping to current user's tenant
-- Auto-population of `tenant_id` on create
-
-Users must have a `tenant_id` column for this to work.
-```
-
----
-
-### Scenario 5: Multi-Tenant with Composite Unique
-
-**User Request:**
-> "Create a User API where each tenant can have users with the same email"
-
-**Your Response:**
-
-```bash
-php artisan make:api-bundle User \
-  --schema='[{"name":"name","type":"string","required":true},{"name":"email","type":"string","required":true},{"name":"username","type":"string","required":true}]' \
-  --composite-unique='[["email","tenant_id"],["username","tenant_id"]]' \
-  --multi-tenant
-```
-
-**Explain what this does:**
-
-```markdown
-This creates:
-1. `tenant_id` column (from --multi-tenant)
-2. Two composite unique constraints:
-   - `users_composite_unique` on (email, tenant_id)
-   - `users_composite_unique_a` on (username, tenant_id)
-
-This allows:
-- user@example.com in tenant 1
-- user@example.com in tenant 2 (different tenant)
-- But prevents duplicate emails within the same tenant
-```
-
----
-
-### Scenario 6: Warehouse Inventory with Multiple Composites
+### Scenario 4: Warehouse Inventory with Multiple Composites
 
 **User Request:**
 > "Create inventory where the same product can exist in different warehouses, but SKU+warehouse and barcode+warehouse must be unique"
@@ -459,10 +400,9 @@ php artisan make:api-bundle Inventory \
 
 **Use Cases:**
 
-1. **Multi-tenant applications**: `["email", "tenant_id"]` - same email across different tenants
-2. **Warehouse inventory**: `["sku", "warehouse_id"]` - same SKU in different warehouses
-3. **Localized content**: `["slug", "language_id"]` - same slug in different languages
-4. **Versioned data**: `["document_id", "version"]` - unique versions of documents
+1. **Warehouse inventory**: `["sku", "warehouse_id"]` - same SKU in different warehouses
+2. **Localized content**: `["slug", "language_id"]` - same slug in different languages
+3. **Versioned data**: `["document_id", "version"]` - unique versions of documents
 
 ### Format
 
@@ -471,7 +411,7 @@ php artisan make:api-bundle Inventory \
 [["column1", "column2"]]
 
 // Multiple composite uniques
-[["email", "tenant_id"], ["username", "tenant_id"]]
+[["sku", "warehouse_id"], ["barcode", "warehouse_id"]]
 
 // Multi-composite (3+ columns)
 [["product_id", "warehouse_id", "batch_number"]]
@@ -488,9 +428,9 @@ php artisan make:api-bundle Inventory \
 
 ```bash
 # Single composite
-php artisan make:api-bundle User \
+php artisan make:api-bundle Product \
   --schema='[...]' \
-  --composite-unique='[["email","tenant_id"]]'
+  --composite-unique='[["sku","warehouse_id"]]'
 
 # Multiple composites
 php artisan make:api-bundle Product \
@@ -509,14 +449,14 @@ php artisan make:api-bundle Inventory \
 
 ```markdown
 Single Column Unique:
-- Each email must be globally unique
-- email: user@example.com (can only exist once)
+- Each SKU must be globally unique
+- sku: ABC123 (can only exist once)
 
 Composite Unique:
 - Each combination must be unique
-- (user@example.com, tenant_1) ✅
-- (user@example.com, tenant_2) ✅
-- (user@example.com, tenant_1) ❌ Duplicate!
+- (ABC123, warehouse_1) ✅
+- (ABC123, warehouse_2) ✅
+- (ABC123, warehouse_1) ❌ Duplicate!
 ```
 
 ---
@@ -667,10 +607,10 @@ php artisan make:api-migration post_tag --schema='[...]' --pivot=true
 
 ```bash
 # WRONG - single array
---composite-unique='["email","tenant_id"]'
+--composite-unique='["sku","warehouse_id"]'
 
 # CORRECT - array of arrays
---composite-unique='[["email","tenant_id"]]'
+--composite-unique='[["sku","warehouse_id"]]'
 ```
 
 ---
@@ -834,18 +774,18 @@ When helping users, educate them on:
 
 ```bash
 # Complete bundle
-php artisan make:api-bundle {Name} [--schema=JSON] [--soft-deletes] [--multi-tenant] [--composite-unique=JSON] [--driver=eloquent|mysql|postgres|all]
+php artisan make:api-bundle {Name} [--schema=JSON] [--soft-deletes] [--composite-unique=JSON] [--driver=eloquent|mysql|postgres|all]
 
 # Individual components
-php artisan make:api-model {Name} [--schema=JSON] [--pivot=true] [--soft-deletes] [--multi-tenant]
-php artisan make:api-migration {Name} [--schema=JSON] [--pivot=true] [--soft-deletes] [--multi-tenant] [--composite-unique=JSON]
+php artisan make:api-model {Name} [--schema=JSON] [--pivot=true] [--soft-deletes]
+php artisan make:api-migration {Name} [--schema=JSON] [--pivot=true] [--soft-deletes] [--composite-unique=JSON]
 php artisan make:api-repository {Name} [--schema=JSON] [--driver=eloquent|mysql|postgres|all]
 php artisan make:api-service {Name}
 php artisan make:api-controller {Name}
 php artisan make:api-request {Name} [--schema=JSON]
 php artisan make:api-resource {Name} [--schema=JSON]
 php artisan make:api-factory {Name} [--schema=JSON]
-php artisan make:api-test {Name} [--schema=JSON] [--soft-deletes] [--multi-tenant]
+php artisan make:api-test {Name} [--schema=JSON] [--soft-deletes]
 php artisan make:api-routes {Name} [--soft-deletes]
 ```
 

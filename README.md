@@ -36,7 +36,6 @@ Laravel Architect generates production-ready API scaffolding with complete CRUD 
 - 📦 **Batch Operations** - Built-in support for bulk create, update, delete, and restore
 - 🔍 **Search & Filtering** - Automatic query filtering and search capabilities
 - 🗑️ **Soft Deletes** - Optional soft delete support with restore functionality
-- 🏢 **Multi-Tenancy** - Built-in tenant isolation support
 - 🔑 **Composite Unique Keys** - Support for multi-column unique constraints with smart naming
 - 🎨 **API Resources** - Laravel Resource transformers for consistent JSON responses
 - ✅ **Form Validation** - Auto-generated Form Request classes with smart validation rules
@@ -383,7 +382,6 @@ php artisan make:api-bundle {name} [options]
 - `--schema=JSON` - Schema definition (see [Schema Format](#schema-format))
 - `--pivot=true` - **DEPRECATED**: Use `make:api-migration --pivot=true` instead
 - `--soft-deletes` - Include soft delete support
-- `--multi-tenant` - Include multi-tenancy support
 - `--composite-unique=JSON` - Add composite unique constraints
 - `--driver=eloquent` - Repository driver: `eloquent`, `mysql`, `postgres`, or `all`
 
@@ -399,15 +397,6 @@ php artisan make:api-bundle Video \
 
 # With soft deletes
 php artisan make:api-bundle Product --soft-deletes
-
-# With multi-tenancy
-php artisan make:api-bundle Order --multi-tenant
-
-# With composite unique (multi-tenant users)
-php artisan make:api-bundle User \
-  --schema='[{"name":"email","type":"string","required":true},{"name":"tenant_id","type":"unsignedBigInteger","required":true}]' \
-  --composite-unique='[["email","tenant_id"]]' \
-  --multi-tenant
 
 # Generate all repository types
 php artisan make:api-bundle Video --driver=all
@@ -437,7 +426,6 @@ php artisan make:api-model {name} [options]
 - `--schema=JSON` - Field definitions
 - `--pivot=true` - Create pivot model (no timestamps)
 - `--soft-deletes` - Add SoftDeletes trait
-- `--multi-tenant` - Add MultiTenantTrait
 
 **Example:**
 
@@ -494,7 +482,6 @@ php artisan make:api-migration {name} [options]
 - `--schema=JSON` - Column definitions
 - `--pivot=true` - Create pivot migration (no id, no timestamps, composite keys)
 - `--soft-deletes` - Add `deleted_at` column
-- `--multi-tenant` - Add `tenant_id` column with foreign key
 - `--composite-unique=JSON` - Add composite unique constraints
 
 **Example:**
@@ -789,7 +776,6 @@ php artisan make:api-test {name} [options]
 **Options:**
 - `--schema=JSON` - Schema for test data
 - `--soft-deletes` - Include soft delete tests
-- `--multi-tenant` - Include multi-tenancy tests
 
 **Generates comprehensive PEST tests covering:**
 - ✅ Listing with pagination
@@ -800,7 +786,6 @@ php artisan make:api-test {name} [options]
 - ✅ Delete
 - ✅ Batch operations (all CRUD)
 - ✅ Soft deletes (if enabled)
-- ✅ Multi-tenancy (if enabled)
 - ✅ Edge cases and error handling
 
 ---
@@ -1011,26 +996,7 @@ Create unique constraints across multiple columns using the `--composite-unique`
 | 2 columns | `{table}_composite_unique` | `{table}_composite_unique_a`, `_b`, etc. |
 | 3+ columns | `{table}_multi_composite_unique` | `{table}_multi_composite_unique_a`, `_b`, etc. |
 
-**Example 1: Multi-Tenant Users (Single Composite)**
-
-```bash
-php artisan make:api-bundle User \
-  --schema='[
-    {"name":"email","type":"string","required":true},
-    {"name":"username","type":"string","required":true},
-    {"name":"tenant_id","type":"unsignedBigInteger","required":true,"isForeignKey":true,"foreignTable":"tenant"}
-  ]' \
-  --composite-unique='[["email","tenant_id"]]' \
-  --multi-tenant
-```
-
-**Generates:**
-```sql
--- Unique constraint name: users_composite_unique
-ALTER TABLE users ADD UNIQUE users_composite_unique (email, tenant_id);
-```
-
-**Example 2: Multiple Composites**
+**Example 1: Multiple Composites**
 
 ```bash
 php artisan make:api-bundle Product \
@@ -1061,7 +1027,7 @@ Migration created: 2024_01_15_120000_create_products_table.php
    ⚠️  Multiple composite unique keys detected - using suffix notation (_a, _b, etc.)
 ```
 
-**Example 3: Multi-Composite (3+ columns)**
+**Example 2: Multi-Composite (3+ columns)**
 
 ```bash
 php artisan make:api-bundle Inventory \
@@ -1098,22 +1064,17 @@ $table->unique(['post_id', 'tag_id'], 'post_tag_composite_unique');       // Com
 
 **Use Cases:**
 
-1. **Multi-Tenancy**: Same email/username across different tenants
-   ```json
-   [["email", "tenant_id"]]
-   ```
-
-2. **Warehouse Systems**: Same SKU in different warehouses
+1. **Warehouse Systems**: Same SKU in different warehouses
    ```json
    [["sku", "warehouse_id"]]
    ```
 
-3. **Localization**: Same slug in different languages
+2. **Localization**: Same slug in different languages
    ```json
    [["slug", "language_id"]]
    ```
 
-4. **Versioning**: Unique versions of documents
+3. **Versioning**: Unique versions of documents
    ```json
    [["document_id", "version"]]
    ```
@@ -1235,38 +1196,7 @@ public function products()
 
 ---
 
-#### Example 3: Multi-Tenant SaaS Application
-
-```bash
-# Create Tenant
-php artisan make:api-bundle Tenant \
-  --schema='[
-    {"name":"name","type":"string","required":true},
-    {"name":"domain","type":"string","required":true,"unique":true},
-    {"name":"is_active","type":"boolean","default":true}
-  ]'
-
-# Create multi-tenant Project with composite unique
-php artisan make:api-bundle Project \
-  --schema='[
-    {"name":"name","type":"string","required":true},
-    {"name":"slug","type":"string","required":true},
-    {"name":"description","type":"text"},
-    {"name":"status","type":"string","required":true,"default":"active"}
-  ]' \
-  --composite-unique='[["slug","tenant_id"]]' \
-  --multi-tenant \
-  --soft-deletes
-```
-
-**This creates:**
-- `tenant_id` column automatically
-- Composite unique on `(slug, tenant_id)` - same slug across different tenants
-- Multi-tenant trait for automatic scoping
-
----
-
-#### Example 4: Warehouse Inventory System
+#### Example 3: Warehouse Inventory System
 
 ```bash
 # Create Warehouse
@@ -1529,28 +1459,6 @@ Content-Type: application/json
 
 ---
 
-### Multi-Tenancy
-
-When using `--multi-tenant`, the generated model automatically:
-
-1. ✅ Adds `tenant_id` to migration
-2. ✅ Includes `MultiTenantTrait` in model
-3. ✅ Automatically scopes all queries to current user's tenant
-4. ✅ Auto-populates `tenant_id` on create
-
-```php
-// Automatically scoped to current tenant
-$videos = Video::all();
-
-// Get records for all tenants (admin only)
-$videos = Video::allTenants()->get();
-
-// Get records for specific tenant
-$videos = Video::forTenant(5)->get();
-```
-
----
-
 ### Search & Filtering
 
 All `index()` endpoints support search:
@@ -1668,10 +1576,10 @@ php artisan migrate --env=testing
 
 ```bash
 # WRONG - single array
---composite-unique='["email","tenant_id"]'
+--composite-unique='["sku","warehouse_id"]'
 
 # CORRECT - array of arrays
---composite-unique='[["email","tenant_id"]]'
+--composite-unique='[["sku","warehouse_id"]]'
 ```
 
 ---
