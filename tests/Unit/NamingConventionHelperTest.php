@@ -80,6 +80,14 @@ describe('NamingConventionHelper', function () {
         });
     });
 
+    describe('modelToBelongsToManyMethod', function () {
+        test('converts to plural camelCase', function () {
+            expect(NamingConventionHelper::modelToBelongsToManyMethod('Tag'))->toBe('tags');
+            expect(NamingConventionHelper::modelToBelongsToManyMethod('Category'))->toBe('categories');
+            expect(NamingConventionHelper::modelToBelongsToManyMethod('BlogPost'))->toBe('blogPosts');
+        });
+    });
+
     describe('isValidModelName', function () {
         test('accepts valid StudlyCase singular names', function () {
             expect(NamingConventionHelper::isValidModelName('User'))->toBeTrue();
@@ -117,6 +125,14 @@ describe('NamingConventionHelper', function () {
         test('converts table name to model', function () {
             expect(NamingConventionHelper::tableToModel('users'))->toBe('User');
             expect(NamingConventionHelper::tableToModel('blog_posts'))->toBe('BlogPost');
+        });
+    });
+
+    describe('modelToSingularSnake', function () {
+        test('converts model to singular snake_case', function () {
+            expect(NamingConventionHelper::modelToSingularSnake('User'))->toBe('user');
+            expect(NamingConventionHelper::modelToSingularSnake('BlogPost'))->toBe('blog_post');
+            expect(NamingConventionHelper::modelToSingularSnake('Category'))->toBe('category');
         });
     });
 
