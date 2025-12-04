@@ -4,6 +4,7 @@ namespace {{ namespace }};
 
 use {{ model_namespace }}\{{ class }};
 use Illuminate\Database\Eloquent\Factories\Factory;
+{{ additional_imports }}
 
 /**
  * @extends \Illuminate\Database\Eloquent\Factories\Factory<\{{ model_namespace }}\{{ class }}>

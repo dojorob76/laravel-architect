@@ -100,11 +100,26 @@ class TypeMappingHelper
         'image' => 'fake()->imageUrl()',
         'avatar' => 'fake()->imageUrl(64, 64)',
         'password' => 'bcrypt(fake()->password())',
-        'token' => '\\Illuminate\\Support\\Str::random(60)',
+        'token' => 'Str::random(60)',
         'user_agent' => 'fake()->userAgent()',
         'color' => 'fake()->hexColor()',
         'company' => 'fake()->company()',
         'ip' => 'fake()->ipv4()',
+    ];
+
+    /**
+     * Patterns to exclude from semantic matching
+     * Prevents false positives (e.g., 'filename' shouldn't match 'name')
+     */
+    protected static array $semanticExclusions = [
+        'name' => ['file', 'class', 'table', 'column', 'field', 'path', 'host', 'domain'],
+    ];
+
+    /**
+     * Faker methods that require specific use statements
+     */
+    protected static array $fakerImports = [
+        'Str::random' => 'Illuminate\Support\Str',
     ];
 
     /**
@@ -197,6 +212,19 @@ class TypeMappingHelper
         // Check each pattern in order
         foreach (self::$semanticFakerMap as $pattern => $faker) {
             if (str_contains($lowerName, $pattern)) {
+                // Check exclusions for this pattern
+                if (isset(self::$semanticExclusions[$pattern])) {
+                    $excluded = false;
+                    foreach (self::$semanticExclusions[$pattern] as $exclusion) {
+                        if (str_contains($lowerName, $exclusion)) {
+                            $excluded = true;
+                            break;
+                        }
+                    }
+                    if ($excluded) {
+                        continue;
+                    }
+                }
                 return $faker;
             }
         }
@@ -235,5 +263,24 @@ class TypeMappingHelper
     public static function getAllFakerMethods(): array
     {
         return self::$fakerMap;
+    }
+
+    /**
+     * Get required use statements for a faker method
+     *
+     * @param string $fakerMethod The faker method code (e.g., 'Str::random(60)')
+     * @return array Array of fully qualified class names that need to be imported
+     */
+    public static function getRequiredImports(string $fakerMethod): array
+    {
+        $imports = [];
+
+        foreach (self::$fakerImports as $pattern => $import) {
+            if (str_contains($fakerMethod, $pattern)) {
+                $imports[] = $import;
+            }
+        }
+
+        return $imports;
     }
 }

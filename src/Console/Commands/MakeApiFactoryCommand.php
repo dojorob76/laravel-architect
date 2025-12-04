@@ -22,13 +22,14 @@ class MakeApiFactoryCommand extends Command
         $compositeUnique = $this->parseCompositeUnique($this->option('composite-unique'));
         $className = Str::studly($name);
 
-        $definition = $this->buildDefinition($schema, $compositeUnique);
+        [$definition, $imports] = $this->buildDefinitionWithImports($schema, $compositeUnique);
 
         $content = $this->processStub('factory', [
             'namespace' => $this->getNamespace('factories'),
             'model_namespace' => $this->getNamespace('models'),
             'class' => $className,
             'definition' => $definition,
+            'additional_imports' => $this->formatImports($imports),
         ]);
 
         $path = $this->getFactoryPath($className);
@@ -37,13 +38,14 @@ class MakeApiFactoryCommand extends Command
         $this->info("Factory created: {$className}Factory");
     }
 
-    protected function buildDefinition(array $schema, array $compositeUnique): string
+    protected function buildDefinitionWithImports(array $schema, array $compositeUnique): array
     {
         if (empty($schema)) {
-            return '';
+            return ['', []];
         }
 
         $definitions = [];
+        $imports = [];
 
         // Add comment about composite unique constraints if they exist
         if (!empty($compositeUnique)) {
@@ -56,6 +58,14 @@ class MakeApiFactoryCommand extends Command
 
         foreach ($schema as $col) {
             $fakerMethod = $this->determineFakerMethod($col);
+
+            // Collect required imports
+            $requiredImports = TypeMappingHelper::getRequiredImports($fakerMethod);
+            foreach ($requiredImports as $import) {
+                if (!in_array($import, $imports)) {
+                    $imports[] = $import;
+                }
+            }
 
             // Mark fields that are part of composite unique constraints
             $isPartOfComposite = false;
@@ -74,7 +84,21 @@ class MakeApiFactoryCommand extends Command
             }
         }
 
-        return implode(",\n", $definitions);
+        return [implode(",\n", $definitions), $imports];
+    }
+
+    protected function formatImports(array $imports): string
+    {
+        if (empty($imports)) {
+            return '';
+        }
+
+        $formatted = [];
+        foreach ($imports as $import) {
+            $formatted[] = "use {$import};";
+        }
+
+        return implode("\n", $formatted);
     }
 
     protected function determineFakerMethod(array $col): string

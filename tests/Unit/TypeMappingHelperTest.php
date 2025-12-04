@@ -365,6 +365,26 @@ describe('TypeMappingHelper', function () {
         test('returns null for non-semantic column', function () {
             expect(TypeMappingHelper::getSemanticFakerMethod('quantity'))->toBeNull();
         });
+
+        test('excludes filename from name matching', function () {
+            expect(TypeMappingHelper::getSemanticFakerMethod('filename'))->toBeNull();
+        });
+
+        test('excludes classname from name matching', function () {
+            expect(TypeMappingHelper::getSemanticFakerMethod('classname'))->toBeNull();
+        });
+
+        test('excludes tablename from name matching', function () {
+            expect(TypeMappingHelper::getSemanticFakerMethod('tablename'))->toBeNull();
+        });
+
+        test('excludes pathname from name matching', function () {
+            expect(TypeMappingHelper::getSemanticFakerMethod('pathname'))->toBeNull();
+        });
+
+        test('still matches name when not excluded', function () {
+            expect(TypeMappingHelper::getSemanticFakerMethod('person_name'))->toBe('fake()->words(3, true)');
+        });
     });
 
     describe('getBestFakerMethod', function () {
@@ -415,6 +435,29 @@ describe('TypeMappingHelper', function () {
             expect($fakers['string'])->toBe('fake()->word()');
             expect($fakers['email'])->toBe('fake()->safeEmail()');
             expect($fakers['boolean'])->toBe('fake()->boolean()');
+        });
+    });
+
+    describe('getRequiredImports', function () {
+        test('returns Str import for token faker', function () {
+            $imports = TypeMappingHelper::getRequiredImports('Str::random(60)');
+
+            expect($imports)->toBeArray();
+            expect($imports)->toContain('Illuminate\Support\Str');
+        });
+
+        test('returns empty array for standard faker methods', function () {
+            $imports = TypeMappingHelper::getRequiredImports('fake()->word()');
+
+            expect($imports)->toBeArray();
+            expect($imports)->toBeEmpty();
+        });
+
+        test('returns empty array for fake methods', function () {
+            $imports = TypeMappingHelper::getRequiredImports('fake()->email()');
+
+            expect($imports)->toBeArray();
+            expect($imports)->toBeEmpty();
         });
     });
 });
