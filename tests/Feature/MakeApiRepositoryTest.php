@@ -1,11 +1,12 @@
 <?php
 
 use Illuminate\Support\Facades\Artisan;
+use LaravelArchitect\Console\Commands\Support\ConfigHelper;
 use Illuminate\Support\Facades\File;
 
 beforeEach(function () {
-    $repoPath = base_path(config('api_scaffolding.paths.repositories'));
-    $interfacePath = base_path(config('api_scaffolding.paths.repository_interfaces'));
+    $repoPath = ConfigHelper::basePath('repositories');
+    $interfacePath = ConfigHelper::basePath('repository_interfaces');
 
     File::ensureDirectoryExists($repoPath);
     File::ensureDirectoryExists($interfacePath);

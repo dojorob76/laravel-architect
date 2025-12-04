@@ -3,6 +3,7 @@
 namespace LaravelArchitect\Traits;
 
 use Illuminate\Http\JsonResponse;
+use LaravelArchitect\Console\Commands\Support\ConfigHelper;
 
 trait ApiResponseTrait
 {
@@ -11,7 +12,7 @@ trait ApiResponseTrait
      */
     protected function successResponse(mixed $data, ?string $message = null, ?int $statusCode = null): JsonResponse
     {
-        $statusCode = $statusCode ?? config('api_scaffolding.status_codes.success', 200);
+        $statusCode = $statusCode ?? ConfigHelper::statusCode('success');
 
         $response = ['data' => $data];
 
@@ -27,12 +28,12 @@ trait ApiResponseTrait
      */
     protected function createdResponse(mixed $data, ?string $message = null): JsonResponse
     {
-        $message = $message ?? config('api_scaffolding.messages.created', 'Resource created successfully.');
+        $message = $message ?? ConfigHelper::message('created');
 
         return response()->json([
             'data' => $data,
             'message' => $message
-        ], config('api_scaffolding.status_codes.created', 201));
+        ], ConfigHelper::statusCode('created'));
     }
 
     /**
@@ -40,7 +41,7 @@ trait ApiResponseTrait
      */
     protected function errorResponse(string $message, ?int $statusCode = null, ?array $errors = null): JsonResponse
     {
-        $statusCode = $statusCode ?? config('api_scaffolding.status_codes.server_error', 500);
+        $statusCode = $statusCode ?? ConfigHelper::statusCode('server_error');
 
         $response = ['message' => $message];
 
@@ -56,11 +57,11 @@ trait ApiResponseTrait
      */
     protected function notFoundResponse(?string $message = null): JsonResponse
     {
-        $message = $message ?? config('api_scaffolding.messages.not_found', 'Resource not found.');
+        $message = $message ?? ConfigHelper::message('not_found');
 
         return response()->json([
             'message' => $message
-        ], config('api_scaffolding.status_codes.not_found', 404));
+        ], ConfigHelper::statusCode('not_found'));
     }
 
     /**
@@ -74,7 +75,7 @@ trait ApiResponseTrait
             $response['message'] = $message;
         }
 
-        return response()->json($response, config('api_scaffolding.status_codes.no_content', 204));
+        return response()->json($response, ConfigHelper::statusCode('no_content'));
     }
 
     /**
@@ -82,12 +83,12 @@ trait ApiResponseTrait
      */
     protected function validationErrorResponse(array $errors, ?string $message = null): JsonResponse
     {
-        $message = $message ?? config('api_scaffolding.messages.validation_error', 'Validation failed.');
+        $message = $message ?? ConfigHelper::message('validation_error');
 
         return response()->json([
             'message' => $message,
             'errors' => $errors
-        ], config('api_scaffolding.status_codes.unprocessable_entity', 422));
+        ], ConfigHelper::statusCode('unprocessable_entity'));
     }
 
     /**
@@ -95,11 +96,11 @@ trait ApiResponseTrait
      */
     protected function unauthorizedResponse(?string $message = null): JsonResponse
     {
-        $message = $message ?? config('api_scaffolding.messages.unauthorized', 'Unauthorized access.');
+        $message = $message ?? ConfigHelper::message('unauthorized');
 
         return response()->json([
             'message' => $message
-        ], config('api_scaffolding.status_codes.unauthorized', 401));
+        ], ConfigHelper::statusCode('unauthorized'));
     }
 
     /**
@@ -107,10 +108,10 @@ trait ApiResponseTrait
      */
     protected function forbiddenResponse(?string $message = null): JsonResponse
     {
-        $message = $message ?? config('api_scaffolding.messages.forbidden', 'Access forbidden.');
+        $message = $message ?? ConfigHelper::message('forbidden');
 
         return response()->json([
             'message' => $message
-        ], config('api_scaffolding.status_codes.forbidden', 403));
+        ], ConfigHelper::statusCode('forbidden'));
     }
 }

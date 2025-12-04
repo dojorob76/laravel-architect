@@ -22,7 +22,7 @@ class Postgres{{ class }}Repository extends BasePostgresRepository implements {{
 
     public function paginate(?int $perPage = null): LengthAwarePaginator
     {
-        $limit = $perPage ?? config('api_scaffolding.response_settings.pagination_limit', 15);
+        $limit = $perPage ?? \LaravelArchitect\Console\Commands\Support\ConfigHelper::paginationLimit();
         $page = LengthAwarePaginator::resolveCurrentPage();
         $offset = ($page - 1) * $limit;
 
@@ -123,7 +123,7 @@ class Postgres{{ class }}Repository extends BasePostgresRepository implements {{
 
         $whereString = implode(' AND ', $whereClauses);
 
-        $limit = $perPage ?? config('api_scaffolding.response_settings.pagination_limit', 15);
+        $limit = $perPage ?? \LaravelArchitect\Console\Commands\Support\ConfigHelper::paginationLimit();
         $page = LengthAwarePaginator::resolveCurrentPage();
         $offset = ($page - 1) * $limit;
 

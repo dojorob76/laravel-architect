@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Artisan;
+use LaravelArchitect\Console\Commands\Support\ConfigHelper;
 use Illuminate\Support\Facades\File;
 
 beforeEach(function () {

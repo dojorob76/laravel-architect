@@ -1,10 +1,11 @@
 <?php
 
 use Illuminate\Support\Facades\Artisan;
+use LaravelArchitect\Console\Commands\Support\ConfigHelper;
 use Illuminate\Support\Facades\File;
 
 beforeEach(function () {
-    $migrationsPath = base_path(config('api_scaffolding.paths.migrations'));
+    $migrationsPath = ConfigHelper::basePath('migrations');
     File::ensureDirectoryExists($migrationsPath);
 });
 

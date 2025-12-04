@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
+use LaravelArchitect\Console\Commands\Support\ConfigHelper;
 
 abstract class BaseEloquentRepository
 {
@@ -23,7 +24,7 @@ abstract class BaseEloquentRepository
 
     public function paginate(?int $perPage = null): LengthAwarePaginator
     {
-        return $this->model->paginate($perPage ?? config('api_scaffolding.response_settings.pagination_limit', 15));
+        return $this->model->paginate($perPage ?? ConfigHelper::paginationLimit());
     }
 
     public function find(int $id): ?Model
@@ -59,7 +60,7 @@ abstract class BaseEloquentRepository
                 $query->where($field, 'LIKE', "%{$value}%");
             }
         }
-        return $query->paginate($perPage ?? config('api_scaffolding.response_settings.pagination_limit', 15));
+        return $query->paginate($perPage ?? ConfigHelper::paginationLimit());
     }
 
     public function restore(int $id): bool

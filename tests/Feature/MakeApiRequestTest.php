@@ -1,10 +1,11 @@
 <?php
 
 use Illuminate\Support\Facades\Artisan;
+use LaravelArchitect\Console\Commands\Support\ConfigHelper;
 use Illuminate\Support\Facades\File;
 
 beforeEach(function () {
-    $requestsPath = base_path(config('api_scaffolding.paths.requests'));
+    $requestsPath = ConfigHelper::basePath('requests');
     File::ensureDirectoryExists($requestsPath);
 });
 
