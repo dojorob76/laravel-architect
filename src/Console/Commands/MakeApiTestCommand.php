@@ -5,6 +5,7 @@ namespace LaravelArchitect\Console\Commands;
 use Illuminate\Console\Command;
 use Illuminate\Filesystem\Filesystem;
 use LaravelArchitect\Console\Commands\Traits\SchemaParserTrait;
+use LaravelArchitect\Console\Commands\Support\TypeMappingHelper;
 use Illuminate\Support\Str;
 
 class MakeApiTestCommand extends Command
@@ -109,12 +110,8 @@ class MakeApiTestCommand extends Command
         $data = [];
         foreach ($schema as $col) {
             if ($this->isRequired($col)) {
-                $invalidValue = match($col['type'] ?? 'string') {
-                    'integer', 'unsignedBigInteger' => "'not-a-number'",
-                    'boolean' => "'not-a-boolean'",
-                    'email' => "'invalid-email'",
-                    default => "123"
-                };
+                $type = $col['type'] ?? 'string';
+                $invalidValue = TypeMappingHelper::getInvalidTestValue($type);
                 $data[] = "        '{$col['name']}' => {$invalidValue}";
                 break;
             }
@@ -267,24 +264,14 @@ PHP;
 
     protected function generateTestValue(array $col, bool $isUpdate = false): string
     {
-        $type = $col['type'] ?? 'string';
-
+        // Handle foreign keys
         if ($this->isForeignKey($col)) {
             $foreignModel = $this->getForeignModelName($col['name']);
             return "{$foreignModel}::factory()->create()->id";
         }
 
-        return match($type) {
-            'string' => $isUpdate ? "'Updated Test String'" : "'Test String'",
-            'text' => $isUpdate ? "'Updated test text content'" : "'Test text content'",
-            'integer', 'unsignedBigInteger', 'bigInteger' => $isUpdate ? '200' : '100',
-            'boolean' => $isUpdate ? 'false' : 'true',
-            'decimal', 'float', 'double' => $isUpdate ? '99.99' : '19.99',
-            'date' => "now()->format('Y-m-d')",
-            'datetime', 'timestamp' => "now()->toDateTimeString()",
-            'email' => $isUpdate ? "'updated@example.com'" : "'test@example.com'",
-            'json' => "['key' => 'value']",
-            default => "'test value'"
-        };
+        // Delegate type-based values to TypeMappingHelper
+        $type = $col['type'] ?? 'string';
+        return TypeMappingHelper::getTestValue($type, $isUpdate);
     }
 }
