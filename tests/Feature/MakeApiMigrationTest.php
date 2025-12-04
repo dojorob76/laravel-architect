@@ -111,18 +111,6 @@ test('migration adds soft deletes column when requested', function () {
     expect($content)->toContain('$table->softDeletes()');
 });
 
-test('migration adds tenant_id for multi-tenancy', function () {
-    Artisan::call('make:api-migration', [
-        'name' => 'Video',
-        '--multi-tenant' => true
-    ]);
-
-    $content = $this->getMigrationContent('videos');
-
-    expect($content)->toContain("->unsignedBigInteger('tenant_id')")
-        ->and($content)->toContain("->index()");
-});
-
 test('pivot migration has no timestamps and has composite primary key', function () {
     // Create required models first
     Artisan::call('make:api-model', ['name' => 'Post']);
@@ -146,29 +134,29 @@ test('pivot migration has no timestamps and has composite primary key', function
 });
 
 test('creates composite unique constraint', function () {
-    // First create the Tenant model and migration
+    // First create the Category model and migration
     Artisan::call('make:api-model', [
-        'name' => 'Tenant',
+        'name' => 'Category',
         '--schema' => json_encode([['name' => 'name', 'type' => 'string']])
     ]);
 
     Artisan::call('make:api-migration', [
-        'name' => 'Tenant',
+        'name' => 'Category',
         '--schema' => json_encode([['name' => 'name', 'type' => 'string']])
     ]);
 
     $schema = json_encode([
         ['name' => 'email', 'type' => 'string', 'required' => true],
-        ['name' => 'tenant_id', 'type' => 'unsignedBigInteger', 'required' => true],
+        ['name' => 'category_id', 'type' => 'unsignedBigInteger', 'required' => true],
     ]);
 
     Artisan::call('make:api-migration', [
         'name' => 'User',
         '--schema' => $schema,
-        '--composite-unique' => '[["email","tenant_id"]]'
+        '--composite-unique' => '[["email","category_id"]]'
     ]);
 
     $content = $this->getMigrationContent('users');
 
-    expect($content)->toContain("\$table->unique(['email', 'tenant_id'], 'users_composite_unique')");
+    expect($content)->toContain("\$table->unique(['email', 'category_id'], 'users_composite_unique')");
 });

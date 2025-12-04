@@ -3,11 +3,11 @@
  namespace {{ namespace }};
 
  use LaravelArchitect\Base\BaseModel;
- {{ uses_soft_deletes }}{{ uses_multi_tenant }}
+ {{ uses_soft_deletes }}
 
  class {{ class }} extends BaseModel
  {
- {{ soft_deletes_trait }}{{ multi_tenant_trait }}
+ {{ soft_deletes_trait }}
      /**
       * The table associated with the model.
       *

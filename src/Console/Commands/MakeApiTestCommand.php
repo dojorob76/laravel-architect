@@ -11,7 +11,7 @@ class MakeApiTestCommand extends Command
 {
     use SchemaParserTrait;
 
-    protected $signature = 'make:api-test {name} {--schema=} {--soft-deletes} {--multi-tenant} {--composite-unique=}';
+    protected $signature = 'make:api-test {name} {--schema=} {--soft-deletes} {--composite-unique=}';
     protected $description = 'Create PEST tests for API resource';
 
     public function handle(Filesystem $files): void
@@ -19,7 +19,6 @@ class MakeApiTestCommand extends Command
         $name = $this->argument('name');
         $schema = $this->parseSchema($this->option('schema'));
         $softDeletes = $this->option('soft-deletes');
-        $multiTenant = $this->option('multi-tenant');
         $compositeUnique = $this->parseCompositeUnique($this->option('composite-unique'));
 
         $className = Str::studly($name);
@@ -41,7 +40,6 @@ class MakeApiTestCommand extends Command
             : "    \$this->assertDatabaseMissing('{{ table }}', ['id' => \$record->id]);";
         $batchDeleteAssertion = $this->buildBatchDeleteAssertion($softDeletes);
         $batchSoftDeleteTests = $softDeletes ? $this->buildBatchSoftDeleteTests($route, $className) : '';
-        $multiTenantTests = $multiTenant ? $this->buildMultiTenantTests($route, $className) : '';
 
         $content = $this->processStub('test', [
             'model_namespace' => $this->getNamespace('models'),
@@ -61,7 +59,6 @@ class MakeApiTestCommand extends Command
             'soft_delete_assertion' => $softDeleteAssertion,
             'batch_delete_assertion' => $batchDeleteAssertion,
             'batch_soft_delete_tests' => $batchSoftDeleteTests,
-            'multi_tenant_tests' => $multiTenantTests,
         ]);
 
         $path = $this->getTestPath($className);
@@ -78,10 +75,8 @@ class MakeApiTestCommand extends Command
 
         $data = [];
         foreach ($schema as $col) {
-            if ($this->isNotTenantField($col)) {
-                $value = $this->generateTestValue($col);
-                $data[] = "        '{$col['name']}' => {$value}";
-            }
+            $value = $this->generateTestValue($col);
+            $data[] = "        '{$col['name']}' => {$value}";
         }
 
         return implode(",\n", $data);
@@ -146,10 +141,8 @@ class MakeApiTestCommand extends Command
         for ($i = 1; $i <= 2; $i++) {
             $fields = [];
             foreach ($schema as $col) {
-                if ($this->isNotTenantField($col)) {
-                    $value = $this->generateTestValue($col);
-                    $fields[] = "'{$col['name']}' => {$value}";
-                }
+                $value = $this->generateTestValue($col);
+                $fields[] = "'{$col['name']}' => {$value}";
             }
             $records[] = "            [" . implode(', ', $fields) . "]";
         }
@@ -173,7 +166,7 @@ class MakeApiTestCommand extends Command
     {
         $required = [];
         foreach ($schema as $col) {
-            if ($this->isRequired($col) && $this->isNotTenantField($col)) {
+            if ($this->isRequired($col)) {
                 $required[] = "            '{$col['name']}'";
             }
         }
@@ -269,29 +262,6 @@ PHP;
             \$this->assertDatabaseMissing('{$route}', ['id' => \$id]);
         }
     });
-PHP;
-    }
-
-    protected function buildMultiTenantTests(string $route, string $className): string
-    {
-        return <<<PHP
-
-test('users can only see their tenant {$route}', function () {
-    \$user1 = User::factory()->create(['tenant_id' => 1]);
-    \$user2 = User::factory()->create(['tenant_id' => 2]);
-    
-    \$record1 = {$className}::factory()->create(['tenant_id' => 1]);
-    \$record2 = {$className}::factory()->create(['tenant_id' => 2]);
-    
-    \$this->actingAs(\$user1);
-    \$response = \$this->getJson('/api/{$route}');
-    
-    \$response->assertStatus(config('api_scaffolding.status_codes.success', 200));
-    \$ids = collect(\$response->json('data'))->pluck('id')->toArray();
-    
-    expect(\$ids)->toContain(\$record1->id)
-        ->not->toContain(\$record2->id);
-});
 PHP;
     }
 

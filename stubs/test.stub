@@ -268,8 +268,6 @@ describe('{{ class }} Batch Operations', function () {
 {{ batch_soft_delete_tests }}
 });
 
-{{ multi_tenant_tests }}
-
 describe('{{ class }} Edge Cases', function () {
     test('handles large dataset pagination', function () {
         {{ class }}::factory()->count(100)->create();

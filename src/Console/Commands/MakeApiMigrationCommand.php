@@ -12,7 +12,7 @@ class MakeApiMigrationCommand extends Command
 {
     use SchemaParserTrait;
 
-    protected $signature = 'make:api-migration {name?} {--schema=} {--pivot=false} {--models=} {--update-models=true} {--soft-deletes} {--multi-tenant} {--composite-unique=}';
+    protected $signature = 'make:api-migration {name?} {--schema=} {--pivot=false} {--models=} {--update-models=true} {--soft-deletes} {--composite-unique=}';
     protected $description = 'Create a new API migration';
 
     public function handle(Filesystem $files): void
@@ -267,15 +267,6 @@ class MakeApiMigrationCommand extends Command
 
         $foreignKeys = [];
         $primaryKeys = [];
-
-        if (!$isPivot && $this->option('multi-tenant')) {
-            $lines[] = "            \$table->unsignedBigInteger('tenant_id')->index();";
-            $foreignKeys[] = [
-                'name' => 'tenant_id',
-                'foreignTable' => 'tenant',
-                'isForeignKey' => true
-            ];
-        }
 
         foreach ($schema as $col) {
             $line = $this->buildColumnDefinition($col);

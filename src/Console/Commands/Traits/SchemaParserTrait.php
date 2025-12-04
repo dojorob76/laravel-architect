@@ -314,18 +314,7 @@ trait SchemaParserTrait
     }
 
     /**
-     * Check if a column is NOT the tenant_id field.
-     *
-     * @param array $col The column definition from schema
-     * @return bool True if the column is not tenant_id
-     */
-    protected function isNotTenantField(array $col): bool
-    {
-        return $col['name'] !== 'tenant_id';
-    }
-
-    /**
-     * Check if a column is a regular data field (not a foreign key and not tenant_id).
+     * Check if a column is a regular data field (not a foreign key).
      *
      * Useful for filtering schema columns to only those that should be included
      * in test data, fillable arrays, or resource fields.
@@ -335,7 +324,7 @@ trait SchemaParserTrait
      */
     protected function isRegularDataField(array $col): bool
     {
-        return !$this->isForeignKey($col) && $col['name'] !== 'tenant_id';
+        return !$this->isForeignKey($col);
     }
 
     /**
@@ -383,7 +372,7 @@ trait SchemaParserTrait
     }
 
     /**
-     * Filter schema to return only regular data fields (not FKs, not tenant_id).
+     * Filter schema to return only regular data fields (not FKs).
      *
      * @param array $schema The schema array
      * @return array Array of regular data field columns
