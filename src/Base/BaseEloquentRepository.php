@@ -1,14 +1,21 @@
 <?php
 
+declare(strict_types=1);
+
 namespace LaravelArchitect\Base;
 
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Collection;
 use Illuminate\Pagination\LengthAwarePaginator;
-use Illuminate\Support\Facades\DB;
 use LaravelArchitect\Console\Commands\Support\ConfigHelper;
 
-abstract class BaseEloquentRepository
+/**
+ * Base Eloquent repository implementing standard CRUD operations.
+ *
+ * For soft delete support, extend this class and use SoftDeleteEloquentRepository trait.
+ * For bulk operations, extend this class and use BulkEloquentRepository trait.
+ */
+class BaseEloquentRepository implements BaseRepositoryInterface
 {
     protected Model $model;
 
@@ -17,41 +24,69 @@ abstract class BaseEloquentRepository
         $this->model = $model;
     }
 
+    /**
+     * Get all records
+     */
     public function all(): Collection
     {
         return $this->model->all();
     }
 
+    /**
+     * Get paginated records
+     */
     public function paginate(?int $perPage = null): LengthAwarePaginator
     {
         return $this->model->paginate($perPage ?? ConfigHelper::paginationLimit());
     }
 
-    public function find(int $id): ?Model
+    /**
+     * Find a single record by ID
+     */
+    public function find(int $id): ?object
     {
         return $this->model->find($id);
     }
 
-    public function create(array $data): Model
+    /**
+     * Create a new record
+     */
+    public function create(array $data): object
     {
         return $this->model->create($data);
     }
 
+    /**
+     * Update a record by ID
+     */
     public function update(int $id, array $data): bool
     {
         $record = $this->model->find($id);
-        return $record ? $record->update($data) : false;
-    }
 
-    public function delete(int $id): bool
-    {
-        $record = $this->model->find($id);
         if (!$record) {
             return false;
         }
+
+        return $record->update($data);
+    }
+
+    /**
+     * Delete a record by ID
+     */
+    public function delete(int $id): bool
+    {
+        $record = $this->model->find($id);
+
+        if (!$record) {
+            return false;
+        }
+
         return $record->delete();
     }
 
+    /**
+     * Search records by filters
+     */
     public function search(array $filters, ?int $perPage = null): LengthAwarePaginator
     {
         $query = $this->model->newQuery();
@@ -61,76 +96,5 @@ abstract class BaseEloquentRepository
             }
         }
         return $query->paginate($perPage ?? ConfigHelper::paginationLimit());
-    }
-
-    public function restore(int $id): bool
-    {
-        $record = $this->model->withTrashed()->find($id);
-        if (!$record || !method_exists($record, 'restore')) {
-            return false;
-        }
-        return $record->restore();
-    }
-
-    public function forceDelete(int $id): bool
-    {
-        $record = $this->model->withTrashed()->find($id);
-        if (!$record) {
-            return false;
-        }
-        return $record->forceDelete();
-    }
-
-    public function findMany(array $ids): Collection
-    {
-        return $this->model->whereIn('id', $ids)->get();
-    }
-
-    public function createMany(array $records): Collection
-    {
-        $created = collect();
-        DB::transaction(function () use ($records, $created) {
-            foreach ($records as $data) {
-                $created->push($this->model->create($data));
-            }
-        });
-        return $created;
-    }
-
-    public function updateMany(array $records): int
-    {
-        $updated = 0;
-        DB::transaction(function () use ($records, &$updated) {
-            foreach ($records as $data) {
-                if (!isset($data['id'])) {
-                    continue;
-                }
-                $id = $data['id'];
-                unset($data['id']);
-                $record = $this->model->find($id);
-                if ($record && $record->update($data)) {
-                    $updated++;
-                }
-            }
-        });
-        return $updated;
-    }
-
-    public function deleteMany(array $ids): int
-    {
-        return $this->model->whereIn('id', $ids)->delete();
-    }
-
-    public function restoreMany(array $ids): int
-    {
-        if (!method_exists($this->model, 'restore')) {
-            return 0;
-        }
-        return $this->model->withTrashed()->whereIn('id', $ids)->restore();
-    }
-
-    public function forceDeleteMany(array $ids): int
-    {
-        return $this->model->withTrashed()->whereIn('id', $ids)->forceDelete();
     }
 }
