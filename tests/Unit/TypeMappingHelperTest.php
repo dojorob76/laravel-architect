@@ -570,5 +570,85 @@ describe('TypeMappingHelper', function () {
             expect($data)->toHaveKey('field2');
             expect($data)->not->toHaveKey('field3');
         });
+
+        test('uses callback when provided', function () {
+            $fields = [
+                ['name' => 'field1', 'type' => 'string'],
+                ['name' => 'field2', 'type' => 'integer'],
+            ];
+
+            $data = TypeMappingHelper::buildPartialTestData($fields, 2, function ($field, $isUpdate) {
+                if ($field['name'] === 'field1') {
+                    return "'Custom Value'";
+                }
+                return null;
+            });
+
+            expect($data['field1'])->toBe("'Custom Value'");
+            expect($data['field2'])->toBe('200'); // Update value (buildPartialTestData uses isUpdate=true)
+        });
+    });
+
+    describe('buildTestData with callback', function () {
+        test('uses callback for custom values', function () {
+            $fields = [
+                ['name' => 'title', 'type' => 'string'],
+                ['name' => 'user_id', 'type' => 'unsignedBigInteger', 'isForeignKey' => true],
+            ];
+
+            $data = TypeMappingHelper::buildTestData($fields, false, function ($field, $isUpdate) {
+                if ($field['isForeignKey'] ?? false) {
+                    return 'User::factory()->create()->id';
+                }
+                return null;
+            });
+
+            expect($data['title'])->toBe("'Test String'");
+            expect($data['user_id'])->toBe('User::factory()->create()->id');
+        });
+
+        test('falls back to type when callback returns null', function () {
+            $fields = [
+                ['name' => 'count', 'type' => 'integer'],
+            ];
+
+            $data = TypeMappingHelper::buildTestData($fields, false, fn($f, $u) => null);
+
+            expect($data['count'])->toBe('100');
+        });
+
+        test('passes isUpdate flag to callback', function () {
+            $fields = [
+                ['name' => 'title', 'type' => 'string'],
+            ];
+
+            $updateFlagReceived = null;
+
+            TypeMappingHelper::buildTestData($fields, true, function ($field, $isUpdate) use (&$updateFlagReceived) {
+                $updateFlagReceived = $isUpdate;
+                return null;
+            });
+
+            expect($updateFlagReceived)->toBeTrue();
+        });
+
+        test('callback receives complete field array', function () {
+            $fields = [
+                ['name' => 'user_id', 'type' => 'unsignedBigInteger', 'isForeignKey' => true, 'foreignTable' => 'users'],
+            ];
+
+            $receivedField = null;
+
+            TypeMappingHelper::buildTestData($fields, false, function ($field, $isUpdate) use (&$receivedField) {
+                $receivedField = $field;
+                return 'test';
+            });
+
+            expect($receivedField)->toHaveKey('name');
+            expect($receivedField)->toHaveKey('type');
+            expect($receivedField)->toHaveKey('isForeignKey');
+            expect($receivedField)->toHaveKey('foreignTable');
+            expect($receivedField['foreignTable'])->toBe('users');
+        });
     });
 });

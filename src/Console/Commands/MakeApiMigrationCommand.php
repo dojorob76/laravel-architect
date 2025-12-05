@@ -395,7 +395,7 @@ class MakeApiMigrationCommand extends Command
     protected function buildForeignKeyConstraint(array $col): string
     {
         $columnName = $col['name'];
-        $foreignTable = Str::snake(Str::plural($col['foreignTable'] ?? ''));
+        $foreignTable = $this->getTableName($col['foreignTable'] ?? '');
         $foreignColumn = 'id';
 
         $constraint = "            \$table->foreign('{$columnName}')";

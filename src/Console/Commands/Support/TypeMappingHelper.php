@@ -368,13 +368,25 @@ class TypeMappingHelper
      *
      * @param array $fields Schema fields
      * @param bool $isUpdate Whether this is update data
+     * @param callable|null $customValueFn Optional callback for custom values: fn(array $field, bool $isUpdate): ?string
      * @return array Field name => test value mapping
      */
-    public static function buildTestData(array $fields, bool $isUpdate = false): array
+    public static function buildTestData(array $fields, bool $isUpdate = false, ?callable $customValueFn = null): array
     {
         $data = [];
         foreach ($fields as $field) {
             $name = $field['name'];
+
+            // Try custom value function first
+            if ($customValueFn !== null) {
+                $customValue = $customValueFn($field, $isUpdate);
+                if ($customValue !== null) {
+                    $data[$name] = $customValue;
+                    continue;
+                }
+            }
+
+            // Fall back to type-based value
             $type = $field['type'] ?? 'string';
             $data[$name] = self::getTestValue($type, $isUpdate);
         }
@@ -386,11 +398,12 @@ class TypeMappingHelper
      *
      * @param array $fields Schema fields
      * @param int $count Number of fields to include
+     * @param callable|null $customValueFn Optional callback for custom values
      * @return array Field name => test value mapping
      */
-    public static function buildPartialTestData(array $fields, int $count = 1): array
+    public static function buildPartialTestData(array $fields, int $count = 1, ?callable $customValueFn = null): array
     {
         $subset = array_slice($fields, 0, $count);
-        return self::buildTestData($subset, true);
+        return self::buildTestData($subset, true, $customValueFn);
     }
 }

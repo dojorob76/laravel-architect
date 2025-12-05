@@ -60,7 +60,7 @@ class MakeApiRequestCommand extends Command
 
         // Add composite unique validation rules
         if (!empty($compositeUnique)) {
-            $tableName = Str::snake(Str::plural($modelName));
+            $tableName = $this->getTableName($modelName);
             foreach ($compositeUnique as $index => $columns) {
                 $compositeRuleName = 'composite_unique_' . $index;
                 $columnsStr = implode(',', $columns);
@@ -86,25 +86,19 @@ class MakeApiRequestCommand extends Command
 
     protected function determineValidationRules(array $col): array
     {
-        $rules = [];
+        // Get base rules from helper (handles required/nullable + type)
+        $rules = TypeMappingHelper::buildValidationRules($col);
 
-        if ($this->isRequired($col)) {
-            $rules[] = 'required';
-        } else {
-            $rules[] = 'nullable';
-        }
-
-        $type = $col['type'] ?? 'string';
-        $rules[] = TypeMappingHelper::getValidationRule($type);
-
+        // Add unique validation if specified
         if ($col['unique'] ?? false) {
-            $tableName = Str::snake(Str::plural($col['table'] ?? 'table'));
+            $tableName = $this->getTableName($col['table'] ?? 'table');
             $rules[] = 'unique:' . $tableName . ',' . $col['name'];
         }
 
+        // Add foreign key exists validation
         if ($this->isForeignKey($col)) {
             $foreignTable = isset($col['foreignTable'])
-                ? Str::snake(Str::plural($col['foreignTable']))
+                ? $this->getTableName($col['foreignTable'])
                 : $this->getTableName($this->getForeignModelName($col['name']));
 
             $rules[] = "exists:{$foreignTable},id";
