@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace LaravelArchitect\Base;
 
 use Illuminate\Support\Collection;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Pagination\LengthAwarePaginator;
 
 /**
@@ -13,6 +12,9 @@ use Illuminate\Pagination\LengthAwarePaginator;
  *
  * For soft delete support, also implement SoftDeleteRepositoryInterface.
  * For bulk operations, also implement BulkRepositoryInterface.
+ *
+ * Note: Return types use generic types (object, Collection) to support
+ * both Eloquent and raw SQL (MySQL/PostgreSQL) implementations.
  */
 interface BaseRepositoryInterface
 {
@@ -29,12 +31,12 @@ interface BaseRepositoryInterface
     /**
      * Find a single record by ID
      */
-    public function find(int $id): ?Model;
+    public function find(int $id): ?object;
 
     /**
      * Create a new record
      */
-    public function create(array $data): Model;
+    public function create(array $data): object;
 
     /**
      * Update a record by ID

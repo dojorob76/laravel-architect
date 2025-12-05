@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace LaravelArchitect\Base;
 
-use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Collection;
 
 /**
  * Interface for repositories that support bulk/batch operations.
@@ -14,6 +14,9 @@ use Illuminate\Database\Eloquent\Collection;
  *
  * Consider using raw SQL implementations (MySQL/Postgres repositories)
  * for better performance with large datasets.
+ *
+ * Note: Uses Illuminate\Support\Collection (not Eloquent\Collection) to support
+ * both Eloquent and raw SQL implementations.
  */
 interface BulkRepositoryInterface
 {
