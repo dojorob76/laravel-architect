@@ -50,25 +50,5 @@ interface BaseRepositoryInterface
      * Search records by filters
      */
     public function search(array $filters, ?int $perPage = null): LengthAwarePaginator;
-
-    /**
-     * Find multiple records by IDs
-     */
-    public function findMany(array $ids): Collection;
-
-    /**
-     * Create multiple records
-     */
-    public function createMany(array $records): Collection;
-
-    /**
-     * Update multiple records
-     */
-    public function updateMany(array $records): int;
-
-    /**
-     * Delete multiple records by IDs
-     */
-    public function deleteMany(array $ids): int;
 }
 
