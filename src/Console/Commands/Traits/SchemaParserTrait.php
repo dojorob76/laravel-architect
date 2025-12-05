@@ -374,17 +374,6 @@ trait SchemaParserTrait
     }
 
     /**
-     * Filter schema to return only regular data fields (not FKs).
-     *
-     * @param array $schema The schema array
-     * @return array Array of regular data field columns
-     */
-    protected function getRegularDataFields(array $schema): array
-    {
-        return array_filter($schema, fn($col) => $this->isRegularDataField($col));
-    }
-
-    /**
      * Convert model name to foreign key column name.
      *
      * @param string $modelName The StudlyCase model name (e.g., 'User', 'BlogPost')

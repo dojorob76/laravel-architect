@@ -74,13 +74,22 @@ class MakeApiTestCommand extends Command
             return '';
         }
 
-        $data = [];
-        foreach ($schema as $col) {
-            $value = $this->generateTestValue($col);
-            $data[] = "        '{$col['name']}' => {$value}";
+        // Use helper with custom callback for foreign keys
+        $testData = TypeMappingHelper::buildTestData($schema, false, function ($col, $isUpdate) {
+            if ($this->isForeignKey($col)) {
+                $foreignModel = $this->getForeignModelName($col['name']);
+                return "{$foreignModel}::factory()->create()->id";
+            }
+            return null; // Use default type-based value
+        });
+
+        // Format as string for stub
+        $lines = [];
+        foreach ($testData as $name => $value) {
+            $lines[] = "        '{$name}' => {$value}";
         }
 
-        return implode(",\n", $data);
+        return implode(",\n", $lines);
     }
 
     protected function buildTestUpdateData(array $schema): string
@@ -89,16 +98,26 @@ class MakeApiTestCommand extends Command
             return '';
         }
 
-        $data = [];
-        foreach ($schema as $col) {
-            if ($this->isRegularDataField($col)) {
-                $value = $this->generateTestValue($col, true);
-                $data[] = "        '{$col['name']}' => {$value}";
-                break;
-            }
+        // Filter to regular data fields only (not foreign keys)
+        $regularFields = array_filter($schema, fn($col) => $this->isRegularDataField($col));
+
+        if (empty($regularFields)) {
+            return '';
         }
 
-        return implode(",\n", $data);
+        // Use helper with callback for first regular field only
+        $firstField = [array_values($regularFields)[0]];
+        $testData = TypeMappingHelper::buildTestData($firstField, true, function ($col, $isUpdate) {
+            return null; // Use default type-based value (no foreign keys in regular fields)
+        });
+
+        // Format as string for stub
+        $lines = [];
+        foreach ($testData as $name => $value) {
+            $lines[] = "        '{$name}' => {$value}";
+        }
+
+        return implode(",\n", $lines);
     }
 
     protected function buildTestInvalidData(array $schema): string
@@ -122,11 +141,19 @@ class MakeApiTestCommand extends Command
 
     protected function buildTestPartialUpdate(array $schema): string
     {
-        foreach ($schema as $col) {
-            if ($this->isRegularDataField($col)) {
-                $value = $this->generateTestValue($col, true);
-                return "        '{$col['name']}' => {$value}";
-            }
+        // Filter to regular data fields only
+        $regularFields = array_filter($schema, fn($col) => $this->isRegularDataField($col));
+
+        if (empty($regularFields)) {
+            return "        'id' => \$record->id";
+        }
+
+        // Use helper for first regular field
+        $firstField = [array_values($regularFields)[0]];
+        $testData = TypeMappingHelper::buildTestData($firstField, true);
+
+        foreach ($testData as $name => $value) {
+            return "        '{$name}' => {$value}";
         }
 
         return "        'id' => \$record->id";
@@ -134,12 +161,21 @@ class MakeApiTestCommand extends Command
 
     protected function buildTestBatchCreate(array $schema): string
     {
+        // Use helper with custom callback for foreign keys
+        $testData = TypeMappingHelper::buildTestData($schema, false, function ($col, $isUpdate) {
+            if ($this->isForeignKey($col)) {
+                $foreignModel = $this->getForeignModelName($col['name']);
+                return "{$foreignModel}::factory()->create()->id";
+            }
+            return null; // Use default type-based value
+        });
+
+        // Create 2 records with same structure
         $records = [];
         for ($i = 1; $i <= 2; $i++) {
             $fields = [];
-            foreach ($schema as $col) {
-                $value = $this->generateTestValue($col);
-                $fields[] = "'{$col['name']}' => {$value}";
+            foreach ($testData as $name => $value) {
+                $fields[] = "'{$name}' => {$value}";
             }
             $records[] = "            [" . implode(', ', $fields) . "]";
         }
@@ -149,11 +185,19 @@ class MakeApiTestCommand extends Command
 
     protected function buildTestBatchUpdateField(array $schema): string
     {
-        foreach ($schema as $col) {
-            if ($this->isRegularDataField($col)) {
-                $value = $this->generateTestValue($col, true);
-                return "                '{$col['name']}' => {$value}";
-            }
+        // Filter to regular data fields only
+        $regularFields = array_filter($schema, fn($col) => $this->isRegularDataField($col));
+
+        if (empty($regularFields)) {
+            return "                'updated' => true";
+        }
+
+        // Use helper for first regular field
+        $firstField = [array_values($regularFields)[0]];
+        $testData = TypeMappingHelper::buildTestData($firstField, true);
+
+        foreach ($testData as $name => $value) {
+            return "                '{$name}' => {$value}";
         }
 
         return "                'updated' => true";

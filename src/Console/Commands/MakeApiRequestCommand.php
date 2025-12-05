@@ -86,22 +86,16 @@ class MakeApiRequestCommand extends Command
 
     protected function determineValidationRules(array $col): array
     {
-        $rules = [];
+        // Get base rules from helper (handles required/nullable + type)
+        $rules = TypeMappingHelper::buildValidationRules($col);
 
-        if ($this->isRequired($col)) {
-            $rules[] = 'required';
-        } else {
-            $rules[] = 'nullable';
-        }
-
-        $type = $col['type'] ?? 'string';
-        $rules[] = TypeMappingHelper::getValidationRule($type);
-
+        // Add unique validation if specified
         if ($col['unique'] ?? false) {
             $tableName = Str::snake(Str::plural($col['table'] ?? 'table'));
             $rules[] = 'unique:' . $tableName . ',' . $col['name'];
         }
 
+        // Add foreign key exists validation
         if ($this->isForeignKey($col)) {
             $foreignTable = isset($col['foreignTable'])
                 ? Str::snake(Str::plural($col['foreignTable']))
