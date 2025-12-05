@@ -2,7 +2,8 @@
 
 declare(strict_types=1);
 
-use LaravelArchitect\Base\SoftDeleteRepositoryInterface;
+use LaravelArchitect\Base\Contracts\BaseRepositoryInterface;
+use LaravelArchitect\Base\Contracts\SoftDeleteRepositoryInterface;
 
 describe('SoftDeleteRepositoryInterface', function () {
     test('interface exists', function () {
@@ -68,7 +69,7 @@ describe('SoftDeleteRepositoryInterface', function () {
 
 describe('BaseRepositoryInterface after refactor', function () {
     test('does not include soft delete methods', function () {
-        $reflection = new ReflectionClass(\LaravelArchitect\Base\BaseRepositoryInterface::class);
+        $reflection = new ReflectionClass(BaseRepositoryInterface::class);
 
         expect($reflection->hasMethod('restore'))->toBeFalse();
         expect($reflection->hasMethod('forceDelete'))->toBeFalse();
@@ -77,7 +78,7 @@ describe('BaseRepositoryInterface after refactor', function () {
     });
 
     test('still includes basic CRUD methods', function () {
-        $reflection = new ReflectionClass(\LaravelArchitect\Base\BaseRepositoryInterface::class);
+        $reflection = new ReflectionClass(BaseRepositoryInterface::class);
 
         expect($reflection->hasMethod('all'))->toBeTrue();
         expect($reflection->hasMethod('find'))->toBeTrue();

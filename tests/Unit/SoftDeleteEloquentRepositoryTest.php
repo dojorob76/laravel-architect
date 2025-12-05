@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use LaravelArchitect\Base\BaseEloquentRepository;
-use LaravelArchitect\Base\SoftDeleteRepositoryInterface;
+use LaravelArchitect\Base\Contracts\SoftDeleteRepositoryInterface;
 use LaravelArchitect\Base\Traits\SoftDeleteEloquentRepository;
 
 // Create a test model that uses SoftDeletes

@@ -16,6 +16,7 @@ use Illuminate\Support\Facades\DB;
  */
 trait SoftDeletePostgresRepository
 {
+    use PostgresPlaceholderHelper;
     /**
      * Restore a soft-deleted record
      */
@@ -108,17 +109,5 @@ trait SoftDeletePostgresRepository
         $sql = "SELECT * FROM {$this->table} WHERE deleted_at IS NOT NULL";
 
         return DB::select($sql);
-    }
-
-    /**
-     * Build PostgreSQL positional placeholders ($1, $2, $3, ...)
-     */
-    protected function buildPositionalPlaceholders(int $count, int $startAt = 1): string
-    {
-        $placeholders = [];
-        for ($i = $startAt; $i < $startAt + $count; $i++) {
-            $placeholders[] = '$' . $i;
-        }
-        return implode(', ', $placeholders);
     }
 }

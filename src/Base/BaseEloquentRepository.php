@@ -7,6 +7,7 @@ namespace LaravelArchitect\Base;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Pagination\LengthAwarePaginator;
+use LaravelArchitect\Base\Contracts\BaseRepositoryInterface;
 use LaravelArchitect\Console\Commands\Support\ConfigHelper;
 
 /**

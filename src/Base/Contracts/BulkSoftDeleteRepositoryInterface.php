@@ -2,13 +2,15 @@
 
 declare(strict_types=1);
 
-namespace LaravelArchitect\Base;
+namespace LaravelArchitect\Base\Contracts;
+
+use Illuminate\Support\Collection;
 
 /**
- * Interface for bulk soft delete operations.
+ * Interface for bulk soft delete repository operations.
  *
- * Implement this alongside BulkRepositoryInterface and SoftDeleteRepositoryInterface
- * for models that use soft deletes and need batch restore/force delete.
+ * Implement this interface alongside BulkRepositoryInterface
+ * when your model uses the SoftDeletes trait.
  */
 interface BulkSoftDeleteRepositoryInterface
 {
@@ -32,7 +34,6 @@ interface BulkSoftDeleteRepositoryInterface
      * Find multiple records including soft-deleted
      *
      * @param array<int> $ids
-     * @return iterable
      */
-    public function findManyWithTrashed(array $ids): iterable;
+    public function findManyWithTrashed(array $ids): Collection;
 }

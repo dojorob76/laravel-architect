@@ -2,7 +2,7 @@
 
 namespace {{ namespace }};
 
-use LaravelArchitect\Base\BaseRepositoryInterface;
+use LaravelArchitect\Base\Contracts\BaseRepositoryInterface;
 
 interface {{ class }}RepositoryInterface extends BaseRepositoryInterface
 {

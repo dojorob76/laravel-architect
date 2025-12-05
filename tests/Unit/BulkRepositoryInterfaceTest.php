@@ -2,8 +2,9 @@
 
 declare(strict_types=1);
 
-use LaravelArchitect\Base\BulkRepositoryInterface;
-use LaravelArchitect\Base\BulkSoftDeleteRepositoryInterface;
+use LaravelArchitect\Base\Contracts\BaseRepositoryInterface;
+use LaravelArchitect\Base\Contracts\BulkRepositoryInterface;
+use LaravelArchitect\Base\Contracts\BulkSoftDeleteRepositoryInterface;
 
 describe('BulkRepositoryInterface', function () {
     test('interface exists', function () {
@@ -69,7 +70,7 @@ describe('BulkSoftDeleteRepositoryInterface', function () {
 
 describe('BaseRepositoryInterface after refactor', function () {
     test('does not include bulk methods', function () {
-        $reflection = new ReflectionClass(\LaravelArchitect\Base\BaseRepositoryInterface::class);
+        $reflection = new ReflectionClass(BaseRepositoryInterface::class);
 
         expect($reflection->hasMethod('findMany'))->toBeFalse();
         expect($reflection->hasMethod('createMany'))->toBeFalse();
