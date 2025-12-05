@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace LaravelArchitect\Base;
+namespace LaravelArchitect\Base\Contracts;
 
 /**
  * Interface for repositories that support soft delete operations.

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace LaravelArchitect\Base;
+namespace LaravelArchitect\Base\Contracts;
 
 use Illuminate\Support\Collection;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -53,4 +53,3 @@ interface BaseRepositoryInterface
      */
     public function search(array $filters, ?int $perPage = null): LengthAwarePaginator;
 }
-

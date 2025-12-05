@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 use Illuminate\Support\Facades\DB;
 use LaravelArchitect\Base\BaseMySQLRepository;
-use LaravelArchitect\Base\SoftDeleteRepositoryInterface;
+use LaravelArchitect\Base\Contracts\SoftDeleteRepositoryInterface;
 use LaravelArchitect\Base\Traits\SoftDeleteMySQLRepository;
 
 class TestSoftDeleteMySQLRepository extends BaseMySQLRepository implements SoftDeleteRepositoryInterface
