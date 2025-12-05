@@ -99,17 +99,15 @@ class MakeApiTestCommand extends Command
         }
 
         // Filter to regular data fields only (not foreign keys)
-        $regularFields = array_filter($schema, fn($col) => $this->isRegularDataField($col));
+        $regularFields = $this->getRegularDataFields($schema);
 
         if (empty($regularFields)) {
             return '';
         }
 
-        // Use helper with callback for first regular field only
+        // Use helper for first regular field only
         $firstField = [array_values($regularFields)[0]];
-        $testData = TypeMappingHelper::buildTestData($firstField, true, function ($col, $isUpdate) {
-            return null; // Use default type-based value (no foreign keys in regular fields)
-        });
+        $testData = TypeMappingHelper::buildTestData($firstField, true);
 
         // Format as string for stub
         $lines = [];
@@ -142,7 +140,7 @@ class MakeApiTestCommand extends Command
     protected function buildTestPartialUpdate(array $schema): string
     {
         // Filter to regular data fields only
-        $regularFields = array_filter($schema, fn($col) => $this->isRegularDataField($col));
+        $regularFields = $this->getRegularDataFields($schema);
 
         if (empty($regularFields)) {
             return "        'id' => \$record->id";
@@ -186,7 +184,7 @@ class MakeApiTestCommand extends Command
     protected function buildTestBatchUpdateField(array $schema): string
     {
         // Filter to regular data fields only
-        $regularFields = array_filter($schema, fn($col) => $this->isRegularDataField($col));
+        $regularFields = $this->getRegularDataFields($schema);
 
         if (empty($regularFields)) {
             return "                'updated' => true";
