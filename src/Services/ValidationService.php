@@ -20,7 +20,7 @@ class ValidationService
      *
      * @param string $modelClass Fully qualified model class name
      * @param array $data Data to validate
-     * @param array $context Additional context for composite unique validation
+     * @param array $context Additional context for dynamic validation rules (conditional requirements, cross-field validation, role-based rules, etc.)
      * @throws ValidationException
      */
     public function validateForCreate(string $modelClass, array $data, array $context = []): array
@@ -37,7 +37,7 @@ class ValidationService
      * @param string $modelClass Fully qualified model class name
      * @param array $data Data to validate
      * @param int|null $id Record ID for unique rule exclusion
-     * @param array $context Additional context for composite unique validation
+     * @param array $context Additional context for dynamic validation rules (conditional requirements, cross-field validation, role-based rules, etc.)
      * @throws ValidationException
      */
     public function validateForUpdate(string $modelClass, array $data, ?int $id = null, array $context = []): array
@@ -53,7 +53,7 @@ class ValidationService
      *
      * @param string $modelClass Fully qualified model class name
      * @param array $records Array of records to validate
-     * @param array $context Additional context for composite unique validation
+     * @param array $context Additional context for dynamic validation rules (conditional requirements, cross-field validation, role-based rules, etc.)
      * @throws ValidationException With all errors from all records
      */
     public function validateBatchCreate(string $modelClass, array $records, array $context = []): array
@@ -69,7 +69,7 @@ class ValidationService
      *
      * @param string $modelClass Fully qualified model class name
      * @param array $records Array of records to validate (each must have 'id')
-     * @param array $context Additional context for composite unique validation
+     * @param array $context Additional context for dynamic validation rules (conditional requirements, cross-field validation, role-based rules, etc.)
      * @throws ValidationException
      */
     public function validateBatchUpdate(string $modelClass, array $records, array $context = []): array
@@ -100,6 +100,9 @@ class ValidationService
 
     /**
      * Get create validation rules from model
+     *
+     * @param string $modelClass Fully qualified model class name
+     * @param array $context Additional context for dynamic validation rules (conditional requirements, cross-field validation, role-based rules, etc.)
      */
     protected function getCreateRules(string $modelClass, array $context = []): array
     {
@@ -112,6 +115,10 @@ class ValidationService
 
     /**
      * Get update validation rules from model
+     *
+     * @param string $modelClass Fully qualified model class name
+     * @param int|null $id Record ID for unique rule exclusion
+     * @param array $context Additional context for dynamic validation rules (conditional requirements, cross-field validation, role-based rules, etc.)
      */
     protected function getUpdateRules(string $modelClass, ?int $id = null, array $context = []): array
     {
