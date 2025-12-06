@@ -14,16 +14,12 @@ class Postgres{{ class }}BulkRepository implements {{ class }}BulkRepositoryInte
     use BulkPostgresRepository;
 
     /**
-     * The model instance.
-     *
-     * @var string
-     */
-    protected string $model = {{ class }}::class;
-
-    /**
      * The table name.
-     *
-     * @var string
      */
     protected string $table = '{{ table }}';
+
+    /**
+     * The model class for hydration.
+     */
+    protected string $modelClass = '{{ model_namespace }}\{{ class }}';
 }

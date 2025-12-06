@@ -5,6 +5,7 @@ namespace {{ namespace }};
 use {{ model_namespace }}\{{ class }};
 use {{ interface_namespace }}\{{ class }}BulkSoftDeleteRepositoryInterface;
 use LaravelArchitect\Base\Traits\BulkSoftDeleteEloquentRepository;
+use Illuminate\Database\Eloquent\Model;
 
 /**
  * Eloquent implementation of {{ class }} bulk soft delete repository operations.
@@ -15,8 +16,14 @@ class Eloquent{{ class }}BulkSoftDeleteRepository implements {{ class }}BulkSoft
 
     /**
      * The model instance.
-     *
-     * @var string
      */
-    protected string $model = {{ class }}::class;
+    protected Model $model;
+
+    /**
+     * Create a new repository instance.
+     */
+    public function __construct({{ class }} $model)
+    {
+        $this->model = $model;
+    }
 }

@@ -5,6 +5,7 @@ namespace {{ namespace }};
 use {{ model_namespace }}\{{ class }};
 use {{ interface_namespace }}\{{ class }}SoftDeleteRepositoryInterface;
 use LaravelArchitect\Base\Traits\SoftDeleteEloquentRepository;
+use Illuminate\Database\Eloquent\Model;
 
 /**
  * Eloquent implementation of {{ class }} soft delete repository operations.
@@ -15,8 +16,14 @@ class Eloquent{{ class }}SoftDeleteRepository implements {{ class }}SoftDeleteRe
 
     /**
      * The model instance.
-     *
-     * @var string
      */
-    protected string $model = {{ class }}::class;
+    protected Model $model;
+
+    /**
+     * Create a new repository instance.
+     */
+    public function __construct({{ class }} $model)
+    {
+        $this->model = $model;
+    }
 }

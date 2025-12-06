@@ -14,16 +14,12 @@ class Postgres{{ class }}SoftDeleteRepository implements {{ class }}SoftDeleteRe
     use SoftDeletePostgresRepository;
 
     /**
-     * The model instance.
-     *
-     * @var string
-     */
-    protected string $model = {{ class }}::class;
-
-    /**
      * The table name.
-     *
-     * @var string
      */
     protected string $table = '{{ table }}';
+
+    /**
+     * The model class for hydration.
+     */
+    protected string $modelClass = '{{ model_namespace }}\{{ class }}';
 }

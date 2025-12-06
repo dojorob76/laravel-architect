@@ -91,35 +91,11 @@ test('bulk eloquent stub has correct structure', function () {
         ->toContain('use {{ model_namespace }}\{{ class }}')
         ->toContain('use {{ interface_namespace }}\{{ class }}BulkRepositoryInterface')
         ->toContain('use LaravelArchitect\Base\Traits\BulkEloquentRepository')
+        ->toContain('use Illuminate\Database\Eloquent\Model')
         ->toContain('class Eloquent{{ class }}BulkRepository implements {{ class }}BulkRepositoryInterface')
         ->toContain('use BulkEloquentRepository')
-        ->toContain('protected string $model = {{ class }}::class');
-});
-
-test('bulk mysql stub has correct structure', function () {
-    $stubPath = __DIR__ . '/../../stubs/repository_bulk_mysql.stub';
-    $content = File::get($stubPath);
-
-    expect($content)
-        ->toContain('namespace {{ namespace }}')
-        ->toContain('use LaravelArchitect\Base\Traits\BulkMySQLRepository')
-        ->toContain('class MySQL{{ class }}BulkRepository implements {{ class }}BulkRepositoryInterface')
-        ->toContain('use BulkMySQLRepository')
-        ->toContain('protected string $model = {{ class }}::class')
-        ->toContain("protected string \$table = '{{ table }}'");
-});
-
-test('bulk postgres stub has correct structure', function () {
-    $stubPath = __DIR__ . '/../../stubs/repository_bulk_postgres.stub';
-    $content = File::get($stubPath);
-
-    expect($content)
-        ->toContain('namespace {{ namespace }}')
-        ->toContain('use LaravelArchitect\Base\Traits\BulkPostgresRepository')
-        ->toContain('class Postgres{{ class }}BulkRepository implements {{ class }}BulkRepositoryInterface')
-        ->toContain('use BulkPostgresRepository')
-        ->toContain('protected string $model = {{ class }}::class')
-        ->toContain("protected string \$table = '{{ table }}'");
+        ->toContain('protected Model $model')
+        ->toContain('public function __construct({{ class }} $model)');
 });
 
 test('soft delete eloquent stub has correct structure', function () {
@@ -128,10 +104,14 @@ test('soft delete eloquent stub has correct structure', function () {
 
     expect($content)
         ->toContain('namespace {{ namespace }}')
+        ->toContain('use {{ model_namespace }}\{{ class }}')
+        ->toContain('use {{ interface_namespace }}\{{ class }}SoftDeleteRepositoryInterface')
         ->toContain('use LaravelArchitect\Base\Traits\SoftDeleteEloquentRepository')
+        ->toContain('use Illuminate\Database\Eloquent\Model')
         ->toContain('class Eloquent{{ class }}SoftDeleteRepository implements {{ class }}SoftDeleteRepositoryInterface')
         ->toContain('use SoftDeleteEloquentRepository')
-        ->toContain('protected string $model = {{ class }}::class');
+        ->toContain('protected Model $model')
+        ->toContain('public function __construct({{ class }} $model)');
 });
 
 test('bulk soft delete eloquent stub has correct structure', function () {
@@ -140,10 +120,104 @@ test('bulk soft delete eloquent stub has correct structure', function () {
 
     expect($content)
         ->toContain('namespace {{ namespace }}')
+        ->toContain('use {{ model_namespace }}\{{ class }}')
+        ->toContain('use {{ interface_namespace }}\{{ class }}BulkSoftDeleteRepositoryInterface')
         ->toContain('use LaravelArchitect\Base\Traits\BulkSoftDeleteEloquentRepository')
+        ->toContain('use Illuminate\Database\Eloquent\Model')
         ->toContain('class Eloquent{{ class }}BulkSoftDeleteRepository implements {{ class }}BulkSoftDeleteRepositoryInterface')
         ->toContain('use BulkSoftDeleteEloquentRepository')
-        ->toContain('protected string $model = {{ class }}::class');
+        ->toContain('protected Model $model')
+        ->toContain('public function __construct({{ class }} $model)');
+});
+
+test('bulk mysql stub has correct structure', function () {
+    $stubPath = __DIR__ . '/../../stubs/repository_bulk_mysql.stub';
+    $content = File::get($stubPath);
+
+    expect($content)
+        ->toContain('namespace {{ namespace }}')
+        ->toContain('use {{ model_namespace }}\{{ class }}')
+        ->toContain('use {{ interface_namespace }}\{{ class }}BulkRepositoryInterface')
+        ->toContain('use LaravelArchitect\Base\Traits\BulkMySQLRepository')
+        ->toContain('class MySQL{{ class }}BulkRepository implements {{ class }}BulkRepositoryInterface')
+        ->toContain('use BulkMySQLRepository')
+        ->toContain("protected string \$table = '{{ table }}'")
+        ->toContain("protected string \$modelClass = '{{ model_namespace }}\\{{ class }}'");
+});
+
+test('soft delete mysql stub has correct structure', function () {
+    $stubPath = __DIR__ . '/../../stubs/repository_soft_delete_mysql.stub';
+    $content = File::get($stubPath);
+
+    expect($content)
+        ->toContain('namespace {{ namespace }}')
+        ->toContain('use {{ model_namespace }}\{{ class }}')
+        ->toContain('use {{ interface_namespace }}\{{ class }}SoftDeleteRepositoryInterface')
+        ->toContain('use LaravelArchitect\Base\Traits\SoftDeleteMySQLRepository')
+        ->toContain('class MySQL{{ class }}SoftDeleteRepository implements {{ class }}SoftDeleteRepositoryInterface')
+        ->toContain('use SoftDeleteMySQLRepository')
+        ->toContain("protected string \$table = '{{ table }}'")
+        ->toContain("protected string \$modelClass = '{{ model_namespace }}\\{{ class }}'");
+});
+
+test('bulk soft delete mysql stub has correct structure', function () {
+    $stubPath = __DIR__ . '/../../stubs/repository_bulk_soft_delete_mysql.stub';
+    $content = File::get($stubPath);
+
+    expect($content)
+        ->toContain('namespace {{ namespace }}')
+        ->toContain('use {{ model_namespace }}\{{ class }}')
+        ->toContain('use {{ interface_namespace }}\{{ class }}BulkSoftDeleteRepositoryInterface')
+        ->toContain('use LaravelArchitect\Base\Traits\BulkSoftDeleteMySQLRepository')
+        ->toContain('class MySQL{{ class }}BulkSoftDeleteRepository implements {{ class }}BulkSoftDeleteRepositoryInterface')
+        ->toContain('use BulkSoftDeleteMySQLRepository')
+        ->toContain("protected string \$table = '{{ table }}'")
+        ->toContain("protected string \$modelClass = '{{ model_namespace }}\\{{ class }}'");
+});
+
+test('bulk postgres stub has correct structure', function () {
+    $stubPath = __DIR__ . '/../../stubs/repository_bulk_postgres.stub';
+    $content = File::get($stubPath);
+
+    expect($content)
+        ->toContain('namespace {{ namespace }}')
+        ->toContain('use {{ model_namespace }}\{{ class }}')
+        ->toContain('use {{ interface_namespace }}\{{ class }}BulkRepositoryInterface')
+        ->toContain('use LaravelArchitect\Base\Traits\BulkPostgresRepository')
+        ->toContain('class Postgres{{ class }}BulkRepository implements {{ class }}BulkRepositoryInterface')
+        ->toContain('use BulkPostgresRepository')
+        ->toContain("protected string \$table = '{{ table }}'")
+        ->toContain("protected string \$modelClass = '{{ model_namespace }}\\{{ class }}'");
+});
+
+test('soft delete postgres stub has correct structure', function () {
+    $stubPath = __DIR__ . '/../../stubs/repository_soft_delete_postgres.stub';
+    $content = File::get($stubPath);
+
+    expect($content)
+        ->toContain('namespace {{ namespace }}')
+        ->toContain('use {{ model_namespace }}\{{ class }}')
+        ->toContain('use {{ interface_namespace }}\{{ class }}SoftDeleteRepositoryInterface')
+        ->toContain('use LaravelArchitect\Base\Traits\SoftDeletePostgresRepository')
+        ->toContain('class Postgres{{ class }}SoftDeleteRepository implements {{ class }}SoftDeleteRepositoryInterface')
+        ->toContain('use SoftDeletePostgresRepository')
+        ->toContain("protected string \$table = '{{ table }}'")
+        ->toContain("protected string \$modelClass = '{{ model_namespace }}\\{{ class }}'");
+});
+
+test('bulk soft delete postgres stub has correct structure', function () {
+    $stubPath = __DIR__ . '/../../stubs/repository_bulk_soft_delete_postgres.stub';
+    $content = File::get($stubPath);
+
+    expect($content)
+        ->toContain('namespace {{ namespace }}')
+        ->toContain('use {{ model_namespace }}\{{ class }}')
+        ->toContain('use {{ interface_namespace }}\{{ class }}BulkSoftDeleteRepositoryInterface')
+        ->toContain('use LaravelArchitect\Base\Traits\BulkSoftDeletePostgresRepository')
+        ->toContain('class Postgres{{ class }}BulkSoftDeleteRepository implements {{ class }}BulkSoftDeleteRepositoryInterface')
+        ->toContain('use BulkSoftDeletePostgresRepository')
+        ->toContain("protected string \$table = '{{ table }}'")
+        ->toContain("protected string \$modelClass = '{{ model_namespace }}\\{{ class }}'");
 });
 
 test('all stubs use placeholders not hardcoded values', function () {
