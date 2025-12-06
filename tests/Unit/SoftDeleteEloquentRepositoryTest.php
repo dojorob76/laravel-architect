@@ -90,38 +90,6 @@ describe('SoftDeleteEloquentRepository trait', function () {
         });
     });
 
-    describe('restoreMany', function () {
-        test('restores multiple soft-deleted records', function () {
-            $query = Mockery::mock();
-            $query->shouldReceive('whereIn')->with('id', [1, 2, 3])->andReturnSelf();
-            $query->shouldReceive('restore')->once()->andReturn(3);
-
-            $this->model->shouldReceive('withTrashed')->once()->andReturn($query);
-
-            expect($this->repository->restoreMany([1, 2, 3]))->toBe(3);
-        });
-
-        test('returns zero for empty array', function () {
-            expect($this->repository->restoreMany([]))->toBe(0);
-        });
-    });
-
-    describe('forceDeleteMany', function () {
-        test('permanently deletes multiple records', function () {
-            $query = Mockery::mock();
-            $query->shouldReceive('whereIn')->with('id', [1, 2, 3])->andReturnSelf();
-            $query->shouldReceive('forceDelete')->once()->andReturn(3);
-
-            $this->model->shouldReceive('withTrashed')->once()->andReturn($query);
-
-            expect($this->repository->forceDeleteMany([1, 2, 3]))->toBe(3);
-        });
-
-        test('returns zero for empty array', function () {
-            expect($this->repository->forceDeleteMany([]))->toBe(0);
-        });
-    });
-
     describe('findWithTrashed', function () {
         test('finds record including trashed', function () {
             $record = Mockery::mock(TestSoftDeletableModel::class)->makePartial();

@@ -31,21 +31,6 @@ describe('SoftDeleteRepositoryInterface', function () {
         expect($method->getReturnType()->getName())->toBe('bool');
     });
 
-    test('defines restoreMany method', function () {
-        $reflection = new ReflectionClass(SoftDeleteRepositoryInterface::class);
-        expect($reflection->hasMethod('restoreMany'))->toBeTrue();
-
-        $method = $reflection->getMethod('restoreMany');
-        $params = $method->getParameters();
-        expect($params[0]->getType()->getName())->toBe('array');
-        expect($method->getReturnType()->getName())->toBe('int');
-    });
-
-    test('defines forceDeleteMany method', function () {
-        $reflection = new ReflectionClass(SoftDeleteRepositoryInterface::class);
-        expect($reflection->hasMethod('forceDeleteMany'))->toBeTrue();
-    });
-
     test('defines findWithTrashed method', function () {
         $reflection = new ReflectionClass(SoftDeleteRepositoryInterface::class);
         expect($reflection->hasMethod('findWithTrashed'))->toBeTrue();
@@ -73,8 +58,6 @@ describe('BaseRepositoryInterface after refactor', function () {
 
         expect($reflection->hasMethod('restore'))->toBeFalse();
         expect($reflection->hasMethod('forceDelete'))->toBeFalse();
-        expect($reflection->hasMethod('restoreMany'))->toBeFalse();
-        expect($reflection->hasMethod('forceDeleteMany'))->toBeFalse();
     });
 
     test('still includes basic CRUD methods', function () {

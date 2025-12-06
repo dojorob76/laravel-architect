@@ -41,34 +41,6 @@ trait SoftDeleteEloquentRepository
     }
 
     /**
-     * Restore multiple soft-deleted records
-     *
-     * @param array<int> $ids
-     */
-    public function restoreMany(array $ids): int
-    {
-        if (empty($ids)) {
-            return 0;
-        }
-
-        return $this->model->withTrashed()->whereIn('id', $ids)->restore();
-    }
-
-    /**
-     * Permanently delete multiple records
-     *
-     * @param array<int> $ids
-     */
-    public function forceDeleteMany(array $ids): int
-    {
-        if (empty($ids)) {
-            return 0;
-        }
-
-        return $this->model->withTrashed()->whereIn('id', $ids)->forceDelete();
-    }
-
-    /**
      * Find a record including soft-deleted
      */
     public function findWithTrashed(int $id): ?object
