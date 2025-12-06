@@ -11,7 +11,15 @@ class MakeApiRepositoryCommand extends Command
 {
     use SchemaParserTrait;
 
-    protected $signature = 'make:api-repository {name} {--schema=} {--driver=eloquent} {--composite-unique=}';
+    protected $signature = 'make:api-repository {name}
+        {--schema=}
+        {--soft-deletes}
+        {--no-bulk}
+        {--crud-driver=}
+        {--bulk-driver=}
+        {--soft-delete-driver=}
+        {--bulk-soft-delete-driver=}
+        {--composite-unique=}';
     protected $description = 'Create repository interface and implementations (eloquent|mysql|postgres|all)';
 
     /**
@@ -64,10 +72,43 @@ class MakeApiRepositoryCommand extends Command
         'postgres' => 'Postgres',
     ];
 
+    /**
+     * Resolve the driver for an operation type.
+     * CLI option takes precedence over config.
+     *
+     * @param string $type One of: 'crud', 'bulk', 'soft_delete', 'bulk_soft_delete'
+     * @return string One of: 'eloquent', 'mysql', 'postgres'
+     * @throws \InvalidArgumentException If driver is not valid
+     */
+    protected function resolveDriver(string $type): string
+    {
+        $optionMap = [
+            'crud' => 'crud-driver',
+            'bulk' => 'bulk-driver',
+            'soft_delete' => 'soft-delete-driver',
+            'bulk_soft_delete' => 'bulk-soft-delete-driver',
+        ];
+
+        $cliValue = $this->option($optionMap[$type]);
+
+        $driver = $cliValue ?: \LaravelArchitect\Console\Commands\Support\ConfigHelper::driver($type);
+
+        // Validate driver using existing DRIVER_NAME constant (DRY)
+        if (!isset(self::DRIVER_NAME[$driver])) {
+            $validDrivers = implode(', ', array_keys(self::DRIVER_NAME));
+            throw new \InvalidArgumentException(
+                "Invalid driver '{$driver}' for {$type}. Must be one of: {$validDrivers}"
+            );
+        }
+
+        return $driver;
+    }
+
     public function handle(Filesystem $files): void
     {
         $name = $this->argument('name');
-        $driver = $this->option('driver');
+        $softDeletes = $this->option('soft-deletes');
+        $noBulk = $this->option('no-bulk');
         $compositeUnique = $this->parseCompositeUnique($this->option('composite-unique'));
         $className = Str::studly($name);
         $tableName = $this->getTableName($name);
@@ -76,23 +117,146 @@ class MakeApiRepositoryCommand extends Command
         $interfaceNamespace = $this->getNamespace('contracts');
         $modelNamespace = $this->getNamespace('models');
 
+        // Always generate CRUD interface
         $this->createInterface($files, $className, $interfaceNamespace);
 
-        if ($driver === 'all') {
-            $this->createCrudRepository($files, 'eloquent', $className, $namespace, $interfaceNamespace, $modelNamespace, $tableName);
-            $this->createCrudRepository($files, 'mysql', $className, $namespace, $interfaceNamespace, $modelNamespace, $tableName);
-            $this->createCrudRepository($files, 'postgres', $className, $namespace, $interfaceNamespace, $modelNamespace, $tableName);
-        } else {
-            $this->createCrudRepository($files, $driver, $className, $namespace, $interfaceNamespace, $modelNamespace, $tableName);
+        // Generate CRUD implementations - supports "all" for multiple drivers
+        $this->generateRepositoriesForOperationType($files, 'crud', $className, $namespace, $interfaceNamespace, $modelNamespace, $tableName);
+
+        // Generate Bulk unless --no-bulk
+        if (!$noBulk) {
+            $this->createBulkInterface($files, $className, $interfaceNamespace);
+            $this->generateRepositoriesForOperationType($files, 'bulk', $className, $namespace, $interfaceNamespace, $modelNamespace, $tableName);
         }
 
-        $this->info("Repositories created for {$className}");
-        $this->newLine();
-        $this->comment("📋 Don't forget to bind the interface in a service provider:");
-        $this->comment("   \$this->app->bind(");
-        $this->comment("       \\{$interfaceNamespace}\\{$className}RepositoryInterface::class,");
-        $this->comment("       \\{$namespace}\\Eloquent{$className}Repository::class");
-        $this->comment("   );");
+        // Generate SoftDelete if --soft-deletes
+        if ($softDeletes) {
+            $this->createSoftDeleteInterface($files, $className, $interfaceNamespace);
+            $this->generateRepositoriesForOperationType($files, 'soft_delete', $className, $namespace, $interfaceNamespace, $modelNamespace, $tableName);
+        }
+
+        // Generate BulkSoftDelete if --soft-deletes AND NOT --no-bulk
+        if ($softDeletes && !$noBulk) {
+            $this->createBulkSoftDeleteInterface($files, $className, $interfaceNamespace);
+            $this->generateRepositoriesForOperationType($files, 'bulk_soft_delete', $className, $namespace, $interfaceNamespace, $modelNamespace, $tableName);
+        }
+
+        $this->outputBindingInstructions($className, $interfaceNamespace, $namespace, $softDeletes, $noBulk);
+    }
+
+    /**
+     * Generate repository implementations for an operation type.
+     * Supports "all" driver option to generate all three driver implementations.
+     *
+     * @param Filesystem $files
+     * @param string $operationType One of: 'crud', 'bulk', 'soft_delete', 'bulk_soft_delete'
+     * @param string $className
+     * @param string $namespace
+     * @param string $interfaceNamespace
+     * @param string $modelNamespace
+     * @param string $tableName
+     */
+    protected function generateRepositoriesForOperationType(
+        Filesystem $files,
+        string $operationType,
+        string $className,
+        string $namespace,
+        string $interfaceNamespace,
+        string $modelNamespace,
+        string $tableName
+    ): void {
+        $optionMap = [
+            'crud' => 'crud-driver',
+            'bulk' => 'bulk-driver',
+            'soft_delete' => 'soft-delete-driver',
+            'bulk_soft_delete' => 'bulk-soft-delete-driver',
+        ];
+
+        $cliValue = $this->option($optionMap[$operationType]);
+
+        // If user specified "all", generate for all drivers
+        if ($cliValue === 'all') {
+            foreach (array_keys(self::DRIVER_NAME) as $driver) {
+                $this->generateSingleRepository($files, $operationType, $driver, $className, $namespace, $interfaceNamespace, $modelNamespace, $tableName);
+            }
+        } else {
+            // Use resolveDriver to get single driver (from CLI or config)
+            $driver = $this->resolveDriver($operationType);
+            $this->generateSingleRepository($files, $operationType, $driver, $className, $namespace, $interfaceNamespace, $modelNamespace, $tableName);
+        }
+    }
+
+    /**
+     * Generate a single repository implementation for a specific driver and operation type.
+     *
+     * @param Filesystem $files
+     * @param string $operationType One of: 'crud', 'bulk', 'soft_delete', 'bulk_soft_delete'
+     * @param string $driver One of: 'eloquent', 'mysql', 'postgres'
+     * @param string $className
+     * @param string $namespace
+     * @param string $interfaceNamespace
+     * @param string $modelNamespace
+     * @param string $tableName
+     */
+    protected function generateSingleRepository(
+        Filesystem $files,
+        string $operationType,
+        string $driver,
+        string $className,
+        string $namespace,
+        string $interfaceNamespace,
+        string $modelNamespace,
+        string $tableName
+    ): void {
+        // Use buildClassInfo() for all naming - NO hardcoded values
+        $repoInfo = $this->buildClassInfo($driver, $className, $operationType, 'repository');
+        $interfaceInfo = $this->buildClassInfo($driver, $className, $operationType, 'interface');
+
+        // Get driver-specific properties/constructor/imports
+        $driverPlaceholders = $this->getDriverSpecificPlaceholders($driver, $className, $tableName, $modelNamespace, $operationType);
+
+        if ($operationType === 'crud') {
+            // CRUD repositories extend base class
+            $baseInfo = $this->buildClassInfo($driver, $className, 'crud', 'base');
+
+            $content = $this->processStub('repository', [
+                'namespace' => $namespace,
+                'interface_namespace' => $interfaceNamespace,
+                'model_namespace' => $modelNamespace,
+                'class' => $className,
+                'table' => $tableName,
+                'driver' => self::DRIVER_NAME[$driver],
+                'base_class_import' => $baseInfo['import'],
+                'base_class' => $baseInfo['name'],
+                'properties' => $driverPlaceholders['properties'],
+                'constructor' => $driverPlaceholders['constructor'],
+            ]);
+        } else {
+            // Operation-type repositories use traits
+            $traitInfo = $this->buildClassInfo($driver, $className, $operationType, 'trait');
+
+            // Determine the stub name based on operation type
+            $stubMap = [
+                'bulk' => 'repository_bulk',
+                'soft_delete' => 'repository_soft_delete',
+                'bulk_soft_delete' => 'repository_bulk_soft_delete',
+            ];
+
+            $content = $this->processStub($stubMap[$operationType], [
+                'namespace' => $namespace,
+                'interface_namespace' => $interfaceNamespace,
+                'model_namespace' => $modelNamespace,
+                'class' => $className,
+                'driver' => self::DRIVER_NAME[$driver],
+                'trait_import' => $traitInfo['import'],
+                'trait' => $traitInfo['name'],
+                'properties' => $driverPlaceholders['properties'],
+                'constructor' => $driverPlaceholders['constructor'],
+                'additional_imports' => $driverPlaceholders['additional_imports'],
+            ]);
+        }
+
+        $this->writeFile($files, $repoInfo['path'], $content);
     }
 
     /**
@@ -225,77 +389,128 @@ class MakeApiRepositoryCommand extends Command
         }
     }
 
+    /**
+     * Create the CRUD repository interface.
+     *
+     * Uses buildClassInfo() for path consistency with all other generation methods.
+     */
     protected function createInterface(Filesystem $files, string $className, string $namespace): void
     {
+        // Use buildClassInfo() for path - driver doesn't matter for CRUD interface path
+        $interfaceInfo = $this->buildClassInfo('eloquent', $className, 'crud', 'interface');
+
         $content = $this->processStub('repository_interface', [
             'namespace' => $namespace,
             'class' => $className,
+            'base_interface_import' => $interfaceInfo['import'],
         ]);
 
-        $path = $this->getRepositoryInterfacePath($className);
-        $this->writeFile($files, $path, $content);
+        $this->writeFile($files, $interfaceInfo['path'], $content);
     }
 
-    /**
-     * Create the CRUD repository implementation.
-     *
-     * Uses buildClassInfo() to get class names, imports, and paths.
-     */
-    protected function createCrudRepository(
-        Filesystem $files,
-        string $driver,
-        string $className,
-        string $namespace,
-        string $interfaceNamespace,
-        string $modelNamespace,
-        string $tableName
-    ): void {
-        // Use buildClassInfo() for all naming - NO hardcoded values
-        $repoInfo = $this->buildClassInfo($driver, $className, 'crud', 'repository');
-        $baseInfo = $this->buildClassInfo($driver, $className, 'crud', 'base');
+    protected function createBulkInterface(Filesystem $files, string $className, string $namespace): void
+    {
+        $driver = $this->resolveDriver('bulk');
+        $interfaceInfo = $this->buildClassInfo($driver, $className, 'bulk', 'interface');
 
-        // Get driver-specific properties/constructor
-        $driverPlaceholders = $this->getDriverSpecificPlaceholders($driver, $className, $tableName, $modelNamespace);
-
-        $content = $this->processStub('repository', [
+        $content = $this->processStub('repository_bulk_interface', [
             'namespace' => $namespace,
-            'interface_namespace' => $interfaceNamespace,
-            'model_namespace' => $modelNamespace,
             'class' => $className,
-            'table' => $tableName,
-            'driver' => self::DRIVER_NAME[$driver],
-            'base_class_import' => $baseInfo['import'],
-            'base_class' => $baseInfo['name'],
-            'properties' => $driverPlaceholders['properties'],
-            'constructor' => $driverPlaceholders['constructor'],
+            'base_interface_import' => $interfaceInfo['import'],
         ]);
 
-        // Use path from buildClassInfo()
-        $this->writeFile($files, $repoInfo['path'], $content);
+        $this->writeFile($files, $interfaceInfo['path'], $content);
+    }
+
+    protected function createSoftDeleteInterface(Filesystem $files, string $className, string $namespace): void
+    {
+        $driver = $this->resolveDriver('soft_delete');
+        $interfaceInfo = $this->buildClassInfo($driver, $className, 'soft_delete', 'interface');
+
+        $content = $this->processStub('repository_soft_delete_interface', [
+            'namespace' => $namespace,
+            'class' => $className,
+            'base_interface_import' => $interfaceInfo['import'],
+        ]);
+
+        $this->writeFile($files, $interfaceInfo['path'], $content);
+    }
+
+    protected function createBulkSoftDeleteInterface(Filesystem $files, string $className, string $namespace): void
+    {
+        $driver = $this->resolveDriver('bulk_soft_delete');
+        $interfaceInfo = $this->buildClassInfo($driver, $className, 'bulk_soft_delete', 'interface');
+
+        $content = $this->processStub('repository_bulk_soft_delete_interface', [
+            'namespace' => $namespace,
+            'class' => $className,
+            'base_interface_import' => $interfaceInfo['import'],
+        ]);
+
+        $this->writeFile($files, $interfaceInfo['path'], $content);
+    }
+
+    protected function outputBindingInstructions(string $className, string $interfaceNamespace, string $namespace, bool $softDeletes, bool $noBulk): void
+    {
+        $this->info("Repositories created for {$className}");
+        $this->newLine();
+        $this->comment("Add these bindings to a service provider:");
+        $this->newLine();
+
+        // CRUD binding
+        $crudDriver = $this->resolveDriver('crud');
+        $crudPrefix = self::DRIVER_NAME[$crudDriver];
+        $this->comment("   \$this->app->bind(\\{$interfaceNamespace}\\{$className}RepositoryInterface::class, \\{$namespace}\\{$crudPrefix}{$className}Repository::class);");
+
+        // Bulk binding
+        if (! $noBulk) {
+            $bulkDriver = $this->resolveDriver('bulk');
+            $bulkPrefix = self::DRIVER_NAME[$bulkDriver];
+            $this->comment("   \$this->app->bind(\\{$interfaceNamespace}\\{$className}BulkRepositoryInterface::class, \\{$namespace}\\{$bulkPrefix}{$className}BulkRepository::class);");
+        }
+
+        // SoftDelete binding
+        if ($softDeletes) {
+            $softDeleteDriver = $this->resolveDriver('soft_delete');
+            $softDeletePrefix = self::DRIVER_NAME[$softDeleteDriver];
+            $this->comment("   \$this->app->bind(\\{$interfaceNamespace}\\{$className}SoftDeleteRepositoryInterface::class, \\{$namespace}\\{$softDeletePrefix}{$className}SoftDeleteRepository::class);");
+        }
+
+        // BulkSoftDelete binding
+        if ($softDeletes && ! $noBulk) {
+            $bulkSoftDeleteDriver = $this->resolveDriver('bulk_soft_delete');
+            $bulkSoftDeletePrefix = self::DRIVER_NAME[$bulkSoftDeleteDriver];
+            $this->comment("   \$this->app->bind(\\{$interfaceNamespace}\\{$className}BulkSoftDeleteRepositoryInterface::class, \\{$namespace}\\{$bulkSoftDeletePrefix}{$className}BulkSoftDeleteRepository::class);");
+        }
     }
 
     /**
-     * Get driver-specific placeholder values for properties and constructor.
+     * Get driver-specific placeholder values for properties, constructor, and additional imports.
      *
      * This method handles the structural differences between Eloquent (uses constructor)
-     * and MySQL/Postgres (use properties). All class naming is handled by buildClassInfo().
+     * and MySQL/Postgres (use properties). It also handles the difference between
+     * CRUD Eloquent (extends base class) and operation-type Eloquent (uses trait).
      *
      * @param string $driver One of: 'eloquent', 'mysql', 'postgres'
      * @param string $className The model class name
      * @param string $tableName The database table name
      * @param string $modelNamespace The model namespace from config
-     * @return array{properties: string, constructor: string}
+     * @param string $operationType One of: 'crud', 'bulk', 'soft_delete', 'bulk_soft_delete' (default: 'crud')
+     * @return array{properties: string, constructor: string, additional_imports: string}
      */
     protected function getDriverSpecificPlaceholders(
         string $driver,
         string $className,
         string $tableName,
-        string $modelNamespace
+        string $modelNamespace,
+        string $operationType = 'crud'
     ): array {
         if ($driver === 'eloquent') {
-            return [
-                'properties' => '',
-                'constructor' => <<<PHP
+            if ($operationType === 'crud') {
+                // CRUD Eloquent: extends base class, calls parent constructor
+                return [
+                    'properties' => '',
+                    'constructor' => <<<PHP
 
     /**
      * Create a new repository instance.
@@ -305,10 +520,34 @@ class MakeApiRepositoryCommand extends Command
         parent::__construct(\$model);
     }
 PHP,
+                    'additional_imports' => '',
+                ];
+            }
+
+            // Operation-type Eloquent: uses trait, needs $model property, simple assignment, and Model import
+            return [
+                'properties' => <<<PHP
+
+    /**
+     * The model instance.
+     */
+    protected Model \$model;
+PHP,
+                'constructor' => <<<PHP
+
+    /**
+     * Create a new repository instance.
+     */
+    public function __construct({$className} \$model)
+    {
+        \$this->model = \$model;
+    }
+PHP,
+                'additional_imports' => "\nuse Illuminate\\Database\\Eloquent\\Model;",
             ];
         }
 
-        // MySQL and PostgreSQL use properties, no constructor
+        // MySQL and PostgreSQL use properties, no constructor, no additional imports
         return [
             'properties' => <<<PHP
 
@@ -323,6 +562,7 @@ PHP,
     protected string \$modelClass = '{$modelNamespace}\\{$className}';
 PHP,
             'constructor' => '',
+            'additional_imports' => '',
         ];
     }
 }

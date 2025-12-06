@@ -2,7 +2,7 @@
 
 namespace {{ namespace }};
 
-use LaravelArchitect\Base\Contracts\SoftDeleteRepositoryInterface;
+use {{ base_interface_import }};
 
 /**
  * Interface for {{ class }} soft delete repository operations.

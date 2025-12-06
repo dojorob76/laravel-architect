@@ -2,7 +2,7 @@
 
 namespace {{ namespace }};
 
-use LaravelArchitect\Base\Contracts\BulkRepositoryInterface;
+use {{ base_interface_import }};
 
 /**
  * Interface for {{ class }} bulk repository operations.

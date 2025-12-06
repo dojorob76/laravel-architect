@@ -241,17 +241,6 @@ trait SchemaParserTrait
     }
 
     /**
-     * Build full file path for a repository interface.
-     *
-     * @param string $className The class name
-     * @return string The full path
-     */
-    protected function getRepositoryInterfacePath(string $className): string
-    {
-        return $this->getPath('contracts') . "/{$className}RepositoryInterface.php";
-    }
-
-    /**
      * Build full file path for a migration.
      *
      * @param string $filename The migration filename
