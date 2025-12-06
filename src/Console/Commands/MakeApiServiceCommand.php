@@ -21,7 +21,7 @@ class MakeApiServiceCommand extends Command
 
         $content = $this->processStub('service', [
             'namespace' => $this->getNamespace('services'),
-            'interface_namespace' => $this->getNamespace('repository_interfaces'),
+            'interface_namespace' => $this->getNamespace('contracts'),
             'class' => $className,
         ]);
 

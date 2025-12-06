@@ -6,7 +6,7 @@ use Illuminate\Support\Facades\File;
 
 beforeEach(function () {
     $repoPath = ConfigHelper::basePath('repositories');
-    $interfacePath = ConfigHelper::basePath('repository_interfaces');
+    $interfacePath = ConfigHelper::basePath('contracts');
 
     File::ensureDirectoryExists($repoPath);
     File::ensureDirectoryExists($interfacePath);
@@ -15,9 +15,9 @@ beforeEach(function () {
 test('creates repository interface', function () {
     Artisan::call('make:api-repository', ['name' => 'Video']);
 
-    $this->assertFileWasGenerated('repository_interfaces', 'VideoRepositoryInterface.php');
-    $this->assertFileContains('repository_interfaces', 'VideoRepositoryInterface.php', 'interface VideoRepositoryInterface');
-    $this->assertFileContains('repository_interfaces', 'VideoRepositoryInterface.php', 'extends BaseRepositoryInterface');
+    $this->assertFileWasGenerated('contracts', 'VideoRepositoryInterface.php');
+    $this->assertFileContains('contracts', 'VideoRepositoryInterface.php', 'interface VideoRepositoryInterface');
+    $this->assertFileContains('contracts', 'VideoRepositoryInterface.php', 'extends BaseRepositoryInterface');
 });
 
 test('creates eloquent repository by default', function () {

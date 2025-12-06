@@ -248,7 +248,7 @@ trait SchemaParserTrait
      */
     protected function getRepositoryInterfacePath(string $className): string
     {
-        return $this->getPath('repository_interfaces') . "/{$className}RepositoryInterface.php";
+        return $this->getPath('contracts') . "/{$className}RepositoryInterface.php";
     }
 
     /**

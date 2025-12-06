@@ -23,7 +23,7 @@ class MakeApiRepositoryCommand extends Command
         $tableName = $this->getTableName($name);
 
         $namespace = $this->getNamespace('repositories');
-        $interfaceNamespace = $this->getNamespace('repository_interfaces');
+        $interfaceNamespace = $this->getNamespace('contracts');
         $modelNamespace = $this->getNamespace('models');
 
         $this->createInterface($files, $className, $interfaceNamespace);

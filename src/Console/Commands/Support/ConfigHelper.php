@@ -14,7 +14,7 @@ class ConfigHelper
             'controllers' => config('api_scaffolding.namespaces.controllers'),
             'services' => config('api_scaffolding.namespaces.services'),
             'repositories' => config('api_scaffolding.namespaces.repositories'),
-            'repositoryInterfaces' => config('api_scaffolding.namespaces.repository_interfaces'),
+            'contracts' => config('api_scaffolding.namespaces.contracts'),
             'requests' => config('api_scaffolding.namespaces.requests'),
             'resources' => config('api_scaffolding.namespaces.resources'),
             'factories' => config('api_scaffolding.namespaces.factories'),
@@ -32,7 +32,7 @@ class ConfigHelper
             'controllers' => config('api_scaffolding.paths.controllers'),
             'services' => config('api_scaffolding.paths.services'),
             'repositories' => config('api_scaffolding.paths.repositories'),
-            'repositoryInterfaces' => config('api_scaffolding.paths.repository_interfaces'),
+            'contracts' => config('api_scaffolding.paths.contracts'),
             'requests' => config('api_scaffolding.paths.requests'),
             'resources' => config('api_scaffolding.paths.resources'),
             'factories' => config('api_scaffolding.paths.factories'),
@@ -112,5 +112,31 @@ class ConfigHelper
     public static function basePath(string $key): string
     {
         return base_path(self::path($key));
+    }
+
+    /**
+     * Get the driver for a specific operation type.
+     *
+     * @param string $type Operation type: 'crud', 'bulk', 'soft_delete', 'bulk_soft_delete'
+     * @return string Driver name: 'eloquent', 'mysql', or 'postgres'
+     */
+    public static function driver(string $type): string
+    {
+        return config("api_scaffolding.drivers.{$type}", 'eloquent');
+    }
+
+    /**
+     * Get all driver configurations.
+     *
+     * @return array Array of operation types mapped to their drivers
+     */
+    public static function drivers(): array
+    {
+        return config('api_scaffolding.drivers', [
+            'crud' => 'eloquent',
+            'bulk' => 'eloquent',
+            'soft_delete' => 'eloquent',
+            'bulk_soft_delete' => 'eloquent',
+        ]);
     }
 }
