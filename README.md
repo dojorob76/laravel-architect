@@ -109,8 +109,6 @@ Register in `config/app.php`:
 ],
 ```
 
-ℹ️ - The `boost-application-standards-helper.md` can be copy/pasted into your `.ai/guidelines` directory (and edited as desired) if you are using [Laravel Boost](https://github.com/laravel/boost).
-
 ---
 
 ## 🐳 Docker Development Environment
@@ -214,9 +212,10 @@ return [
 
 ## 📏 Coding Standards
 
-Laravel Architect enforces strict coding conventions:
+Laravel Architect enforces strict coding conventions by default, basing these largely on Laravel standards.
+Overrides can be set, and will be honored, from within the config file, but - if you leave the defaults - this will be what you get out of the box:
 
-### Naming Conventions
+### DEFAULT Naming Conventions
 
 | Element | Convention | Example |
 |---------|-----------|---------|
@@ -227,7 +226,7 @@ Laravel Architect enforces strict coding conventions:
 | **Primary Keys** | Always `id` (auto-increment integer) | `id` |
 | **Relationships** | Singular (belongsTo) or Plural (hasMany/belongsToMany) | `user()`, `videos()`, `tags()` |
 
-### Relationship Naming Rules
+### DEFAULT Relationship Naming Rules
 
 **BelongsTo (Many-to-One):**
 - Method name is the **singular** foreign table name
@@ -271,47 +270,30 @@ public function posts()
 }
 ```
 
-**❌ WRONG Relationship Names:**
-```php
-// DON'T DO THIS:
-public function userVideo() { }     // Wrong!
-public function userVideos() { }    // Wrong!
-public function video() { }         // Wrong for hasMany!
-```
-
-**✅ CORRECT Relationship Names:**
-```php
-// DO THIS:
-public function user() { }          // belongsTo
-public function videos() { }        // hasMany
-public function tags() { }          // belongsToMany
-```
-
-### Database Rules
+### DEFAULT Database Rules
 
 1. ✅ **Primary Keys**: Always `id` (integer, auto-increment)
 2. ✅ **Pivot Tables**:
-    - **Do NOT use `make:api-bundle`** - Use `make:api-migration --pivot=true` instead
     - No `id` column
     - Composite primary key from foreign keys
     - Composite unique key (automatically added)
     - No timestamps
     - Named alphabetically: `post_tag` not `tag_post`
-    - Both foreign key tables MUST exist before creating pivot
 3. ✅ **Foreign Keys**:
-    - Always named `{table_name}_id`
+    - `{snake_case_singular_model_name}_id`
     - Referenced table/model MUST exist before creation
     - Automatic validation on generation
-    - Include constraints with cascade behavior
+    - Includes constraints with cascade behavior which can be sent through as arguments
+    - If no arguments are provided and the column is nullable, `onDelete('set null')` will be set, otherwise we'll set `onDelete('cascade')`
 4. ✅ **Timestamps**:
     - Use `useCurrent()` and `useCurrentOnUpdate()`
     - All tables except pivots have `created_at` and `updated_at`
 5. ✅ **Migrations**:
-    - Must check `Schema::hasTable()` before creating
-    - Must use `Schema::dropIfExists()` in `down()` method
+    - All check whether `Schema::hasTable()` before creating
+    - All use `Schema::dropIfExists()` in `down()` method
 6. ✅ **Required vs Nullable**:
     - If `"required": true` in schema → field is required (NOT NULL)
-    - If `"required"` is absent or false → field is nullable (NULL allowed)
+    - If `"required"` is absent or false → field is nullable (NULL allowed with `->nullable()` flag set on migration column)
 
 ### Architecture Rules
 
@@ -326,9 +308,9 @@ public function tags() { }          // belongsToMany
     - Data access only
     - Implement interface
     - Support Eloquent, MySQL, and PostgreSQL
-4. ✅ **Form Requests**:
-    - All validation rules
-    - Different rules for POST vs PATCH
+4. ✅ **Validation**:
+    - Validation rules live in the Model where they can be accessed from anywhere within your application (think seeders or module services) instead of locked behind a HTTP call via Form Request
+    - Form Requests simply invoke the static methods of the model validation rules with functions that allow for validation preparation and context retrieval
 
 ### Code Quality
 
@@ -336,7 +318,7 @@ public function tags() { }          // belongsToMany
 - ✅ Laravel 12+ best practices
 - ✅ Full type hints on all methods
 - ✅ DocBlocks for public methods
-- ✅ Comprehensive PEST tests for all functionality
+- ✅ Comprehensive PEST or phpUnit tests (or both, your call) for all functionality
 
 ---
 
@@ -344,740 +326,7 @@ public function tags() { }          // belongsToMany
 
 ### Quick Start
 
-Generate a complete API resource in one command:
-
-```bash
-php artisan make:api-bundle Video \
-  --schema='[{"name":"title","type":"string","required":true},{"name":"description","type":"text","nullable":true},{"name":"duration","type":"integer","required":true}]'
-```
-
-This generates:
-- ✅ Migration with safety checks
-- ✅ Model with relationships and casts
-- ✅ Repository (interface + implementation)
-- ✅ Service layer
-- ✅ Controller with all CRUD + batch operations
-- ✅ Form Request validation
-- ✅ API Resources (Resource + Collection)
-- ✅ Factory with smart fake data
-- ✅ Comprehensive PEST tests
-- ✅ API routes
-
----
-
-### Command Reference
-
-#### 1. `make:api-bundle` - Generate Complete Resource
-
-**Generates everything for a complete API resource.**
-
-```bash
-php artisan make:api-bundle {name} [options]
-```
-
-**Arguments:**
-- `name` - Singular model name (e.g., `Video`, `BlogPost`)
-
-**Options:**
-- `--schema=JSON` - Schema definition (see [Schema Format](#schema-format))
-- `--pivot=true` - **DEPRECATED**: Use `make:api-migration --pivot=true` instead
-- `--soft-deletes` - Include soft delete support
-- `--composite-unique=JSON` - Add composite unique constraints
-- `--driver=eloquent` - Repository driver: `eloquent`, `mysql`, `postgres`, or `all`
-
-**Examples:**
-
-```bash
-# Basic resource
-php artisan make:api-bundle Article
-
-# With schema
-php artisan make:api-bundle Video \
-  --schema='[{"name":"title","type":"string","required":true}]'
-
-# With soft deletes
-php artisan make:api-bundle Product --soft-deletes
-
-# Generate all repository types
-php artisan make:api-bundle Video --driver=all
-```
-
-**⚠️ Important:** For pivot tables, use `make:api-migration` instead:
-
-```bash
-# WRONG - Don't use make:api-bundle for pivots
-php artisan make:api-bundle post_tag --pivot=true
-
-# CORRECT - Use make:api-migration
-php artisan make:api-migration post_tag \
-  --schema='[{"name":"post_id","type":"unsignedBigInteger"},{"name":"tag_id","type":"unsignedBigInteger"}]' \
-  --pivot=true
-```
-
----
-
-#### 2. `make:api-model` - Generate Model
-
-```bash
-php artisan make:api-model {name} [options]
-```
-
-**Options:**
-- `--schema=JSON` - Field definitions
-- `--pivot=true` - Create pivot model (no timestamps)
-- `--soft-deletes` - Add SoftDeletes trait
-
-**Example:**
-
-```bash
-php artisan make:api-model Video \
-  --schema='[{"name":"title","type":"string","required":true},{"name":"user_id","type":"unsignedBigInteger","isForeignKey":true,"foreignTable":"user"}]' \
-  --soft-deletes
-```
-
-**Generates:**
-
-```php
-<?php
-
-namespace App\Models;
-
-use LaravelArchitect\Base\BaseModel;
-use Illuminate\Database\Eloquent\SoftDeletes;
-
-class Video extends BaseModel
-{
-    use SoftDeletes;
-
-    protected $table = 'videos';
-
-    protected $fillable = [
-        'title',
-        'user_id'
-    ];
-
-    public $timestamps = true;
-
-    protected $casts = [];
-
-    /**
-     * Get the user that owns this video.
-     */
-    public function user()
-    {
-        return $this->belongsTo(\App\Models\User::class, 'user_id');
-    }
-}
-```
-
----
-
-#### 3. `make:api-migration` - Generate Migration
-
-```bash
-php artisan make:api-migration {name} [options]
-```
-
-**Options:**
-- `--schema=JSON` - Column definitions
-- `--pivot=true` - Create pivot migration (no id, no timestamps, composite keys)
-- `--soft-deletes` - Add `deleted_at` column
-- `--composite-unique=JSON` - Add composite unique constraints
-
-**Example:**
-
-```bash
-php artisan make:api-migration Video \
-  --schema='[{"name":"title","type":"string","required":true},{"name":"duration","type":"integer","default":0}]' \
-  --soft-deletes
-```
-
-**Generates:**
-
-```php
-<?php
-
-use Illuminate\Database\Migrations\Migration;
-use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\Schema;
-
-return new class extends Migration
-{
-    public function up(): void
-    {
-        if (Schema::hasTable('videos')) {
-            return;
-        }
-
-        Schema::create('videos', function (Blueprint $table) {
-            $table->id();
-            $table->string('title');
-            $table->integer('duration')->default(0);
-            $table->timestamp('created_at')->useCurrent();
-            $table->timestamp('updated_at')->useCurrent()->useCurrentOnUpdate();
-            $table->softDeletes();
-        });
-    }
-
-    public function down(): void
-    {
-        Schema::dropIfExists('videos');
-    }
-};
-```
-
-**Pivot Table Example:**
-
-```bash
-# Step 1: Ensure both models exist first
-php artisan make:api-bundle Post --schema='[...]'
-php artisan make:api-bundle Tag --schema='[...]'
-
-# Step 2: Create pivot migration
-php artisan make:api-migration post_tag \
-  --schema='[{"name":"post_id","type":"unsignedBigInteger"},{"name":"tag_id","type":"unsignedBigInteger"}]' \
-  --pivot=true
-```
-
-**Pivot Migration Output:**
-
-```php
-Schema::create('post_tag', function (Blueprint $table) {
-    $table->unsignedBigInteger('post_id');
-    $table->unsignedBigInteger('tag_id');
-    $table->primary(['post_id', 'tag_id']);
-    $table->unique(['post_id', 'tag_id'], 'post_tag_composite_unique');
-    $table->foreign('post_id')->references('id')->on('posts')->onDelete('cascade');
-    $table->foreign('tag_id')->references('id')->on('tags')->onDelete('cascade');
-});
-```
-
-**Validation:**
-- ✅ Foreign keys must end with `_id`
-- ✅ Referenced tables/models must exist
-- ✅ Pivot tables must have exactly 2 foreign keys
-- ✅ Pivot table names must be alphabetical
-
----
-
-#### 4. `make:api-repository` - Generate Repository
-
-```bash
-php artisan make:api-repository {name} [options]
-```
-
-**Options:**
-- `--schema=JSON` - Schema (used for table name)
-- `--driver=eloquent` - Which implementation(s) to generate:
-    - `eloquent` (default) - Eloquent ORM
-    - `mysql` - Raw MySQL queries
-    - `postgres` - Raw PostgreSQL queries
-    - `all` - Generate all three
-
-**Example:**
-
-```bash
-php artisan make:api-repository Video --driver=all
-```
-
-**Generates:**
-- `app/Repositories/Interfaces/VideoRepositoryInterface.php`
-- `app/Repositories/EloquentVideoRepository.php`
-- `app/Repositories/MySQLVideoRepository.php`
-- `app/Repositories/PostgresVideoRepository.php`
-
-**Remember to bind in service provider:**
-
-```php
-$this->app->bind(
-    \App\Repositories\Interfaces\VideoRepositoryInterface::class,
-    \App\Repositories\EloquentVideoRepository::class // or MySQL/Postgres
-);
-```
-
----
-
-#### 5. `make:api-service` - Generate Service
-
-```bash
-php artisan make:api-service {name}
-```
-
-**Example:**
-
-```bash
-php artisan make:api-service Video
-```
-
-**Generates:**
-
-```php
-<?php
-
-namespace App\Services;
-
-use App\Repositories\Interfaces\VideoRepositoryInterface;
-use LaravelArchitect\Base\BaseService;
-
-class VideoService extends BaseService
-{
-    public function __construct(
-        protected VideoRepositoryInterface $repository
-    ) {}
-
-    public function getAll(): Collection { /* ... */ }
-    public function create(array $data): object { /* ... */ }
-    // ... all CRUD + batch operations
-}
-```
-
----
-
-#### 6. `make:api-controller` - Generate Controller
-
-```bash
-php artisan make:api-controller {name}
-```
-
-**Example:**
-
-```bash
-php artisan make:api-controller Video
-```
-
-**Generates controller with:**
-- ✅ Standard REST methods: `index`, `store`, `show`, `update`, `destroy`
-- ✅ Soft delete methods: `restore`, `forceDelete`
-- ✅ Batch operations: `batchShow`, `batchStore`, `batchUpdate`, `batchDestroy`, `batchRestore`, `batchForceDelete`
-- ✅ Proper status codes from config
-- ✅ API Resource transformers
-
----
-
-#### 7. `make:api-request` - Generate Form Request
-
-```bash
-php artisan make:api-request {name} [--schema=JSON]
-```
-
-**Example:**
-
-```bash
-php artisan make:api-request Video \
-  --schema='[{"name":"title","type":"string","required":true},{"name":"url","type":"string"}]'
-```
-
-**Generates:**
-
-```php
-<?php
-
-namespace App\Http\Requests;
-
-use LaravelArchitect\Base\BaseFormRequest;
-
-class VideoRequest extends BaseFormRequest
-{
-    public function authorize(): bool
-    {
-        return true;
-    }
-
-    public function rules(): array
-    {
-        $rules = [
-            'title' => ['required', 'string'],
-            'url' => ['nullable', 'string'],
-        ];
-
-        // Make required fields optional for PATCH
-        if ($this->isMethod('PATCH') || $this->isMethod('PUT')) {
-            $rules['title'] = array_diff($rules['title'], ['required']);
-            $rules['title'][] = 'sometimes';
-        }
-
-        return $rules;
-    }
-}
-```
-
-**Required Field Logic:**
-- `"required": true` → `'required'` validation rule
-- `"required"` absent or `false` → `'nullable'` validation rule
-
----
-
-#### 8. `make:api-resource` - Generate API Resources
-
-```bash
-php artisan make:api-resource {name} [--schema=JSON]
-```
-
-**Generates:**
-- `{Name}Resource.php` - Single resource transformer
-- `{Name}Collection.php` - Collection transformer with pagination
-
-**Example:**
-
-```bash
-php artisan make:api-resource Video \
-  --schema='[{"name":"title","type":"string"},{"name":"user_id","type":"unsignedBigInteger","isForeignKey":true,"foreignTable":"user"}]'
-```
-
-**Generated Resource:**
-
-```php
-<?php
-
-namespace App\Http\Resources;
-
-use Illuminate\Http\Resources\Json\JsonResource;
-
-class VideoResource extends JsonResource
-{
-    public function toArray($request): array
-    {
-        return [
-            'id' => $this->id,
-            'title' => $this->title,
-            'user' => new \App\Http\Resources\UserResource($this->whenLoaded('user')),
-            'created_at' => $this->created_at,
-            'updated_at' => $this->updated_at,
-        ];
-    }
-}
-```
-
----
-
-#### 9. `make:api-factory` - Generate Factory
-
-```bash
-php artisan make:api-factory {name} [--schema=JSON]
-```
-
-**Example:**
-
-```bash
-php artisan make:api-factory Video \
-  --schema='[{"name":"title","type":"string"},{"name":"duration","type":"integer"}]'
-```
-
-**Generates factory with intelligent fake data based on field names and types.**
-
----
-
-#### 10. `make:api-test` - Generate PEST Tests
-
-```bash
-php artisan make:api-test {name} [options]
-```
-
-**Options:**
-- `--schema=JSON` - Schema for test data
-- `--soft-deletes` - Include soft delete tests
-
-**Generates comprehensive PEST tests covering:**
-- ✅ Listing with pagination
-- ✅ Search and filtering
-- ✅ Create with validation
-- ✅ Read single record
-- ✅ Update (full and partial)
-- ✅ Delete
-- ✅ Batch operations (all CRUD)
-- ✅ Soft deletes (if enabled)
-- ✅ Edge cases and error handling
-
----
-
-#### 11. `make:api-routes` - Generate Routes
-
-```bash
-php artisan make:api-routes {name} [--soft-deletes]
-```
-
-**Example:**
-
-```bash
-php artisan make:api-routes Video --soft-deletes
-```
-
-**Adds to `routes/api.php` in alphabetical order:**
-
-```php
-// Video routes
-Route::apiResource('videos', VideoController::class);
-Route::post('videos/batch/show', [VideoController::class, 'batchShow']);
-Route::post('videos/batch', [VideoController::class, 'batchStore']);
-Route::patch('videos/batch', [VideoController::class, 'batchUpdate']);
-Route::delete('videos/batch', [VideoController::class, 'batchDestroy']);
-Route::post('videos/{id}/restore', [VideoController::class, 'restore']);
-Route::delete('videos/{id}/force', [VideoController::class, 'forceDelete']);
-Route::post('videos/batch/restore', [VideoController::class, 'batchRestore']);
-Route::delete('videos/batch/force', [VideoController::class, 'batchForceDelete']);
-```
-
----
-
-### Schema Format
-
-The `--schema` option accepts JSON array of column definitions:
-
-```json
-[
-  {
-    "name": "title",
-    "type": "string",
-    "required": true,
-    "nullable": false,
-    "unique": false,
-    "default": null
-  },
-  {
-    "name": "user_id",
-    "type": "unsignedBigInteger",
-    "required": true,
-    "isForeignKey": true,
-    "foreignTable": "user",
-    "onDelete": "cascade",
-    "onUpdate": "cascade"
-  }
-]
-```
-
-**Field Types:**
-
-| Type | MySQL | Use For |
-|------|-------|---------|
-| `string` | VARCHAR(255) | Short text |
-| `text` | TEXT | Long text |
-| `integer` | INT | Whole numbers |
-| `unsignedBigInteger` | BIGINT UNSIGNED | IDs, foreign keys |
-| `bigInteger` | BIGINT | Large numbers |
-| `boolean` | TINYINT(1) | True/false |
-| `decimal` | DECIMAL | Money, precise decimals |
-| `float` | FLOAT | Decimals |
-| `double` | DOUBLE | Large decimals |
-| `date` | DATE | Date only |
-| `datetime` | DATETIME | Date and time |
-| `timestamp` | TIMESTAMP | Unix timestamp |
-| `json` | JSON | JSON data |
-| `email` | VARCHAR(255) | Email addresses |
-
-**Field Properties:**
-
-- `name` (required) - Column name
-- `type` (required) - Data type
-- `required` - If `true`, adds NOT NULL and 'required' validation. If absent/false, adds NULL and 'nullable' validation
-- `nullable` - **DEPRECATED**: Use `required` instead
-- `unique` - Add unique constraint (single column)
-- `default` - Default value
-- `isForeignKey` - Mark as foreign key
-- `foreignTable` - Related table (singular)
-- `onDelete` - Cascade behavior (default: 'cascade')
-- `onUpdate` - Update behavior (default: 'cascade')
-
----
-
-#### Foreign Key Relationships
-
-Define relationships using the parent model name for a cleaner, more intuitive syntax:
-
-```json
-[
-  {"name": "title", "type": "string", "required": true},
-  {"parentModel": "User", "required": true},
-  {"parentModel": "Category", "required": false, "onDelete": "cascade"}
-]
-```
-
-The system automatically:
-- Generates column name: `user_id`, `category_id`
-- Creates foreign key constraints to plural tables: `users`, `categories`
-- Applies appropriate cascade behavior (`onUpdate` always `cascade`, `onDelete` defaults to `cascade` if required or `set null` if optional)
-- Handles nullable foreign keys when `required: false`
-
-**Traditional Format Still Supported:**
-
-You can still use the column-centric format if preferred:
-
-```json
-{
-  "name": "user_id",
-  "type": "unsignedBigInteger",
-  "isForeignKey": true,
-  "foreignTable": "user",
-  "onDelete": "cascade"
-}
-```
-
----
-
-#### Pivot Tables
-
-Create many-to-many pivot tables using model names:
-
-```bash
-php artisan make:api-migration --pivot=true --models='Post,Tag'
-```
-
-This command:
-- Creates `post_tag` table (alphabetically sorted)
-- Adds composite primary key (in the order you specify models)
-- Generates foreign key constraints
-- Injects `tags()` method into Post model
-- Injects `posts()` method into Tag model
-
-**Options:**
-- `--update-models=false` - Skip automatic relationship injection if you prefer to add them manually
-
-**Requirements:**
-- Both models must exist before creating the pivot table
-- Models must be singular StudlyCase (e.g., `Post`, `Tag`, not `Posts`, `tags`)
-- Exactly 2 models required
-
-**Example Workflow:**
-
-```bash
-# 1. Create both models first
-php artisan make:api-bundle Post
-php artisan make:api-bundle Tag
-
-# 2. Create pivot table (automatically updates both models)
-php artisan make:api-migration --pivot=true --models='Post,Tag'
-```
-
----
-
-**Required vs Nullable:**
-
-```json
-// Field is REQUIRED (NOT NULL)
-{
-  "name": "title",
-  "type": "string",
-  "required": true
-}
-
-// Field is NULLABLE (NULL allowed)
-{
-  "name": "description",
-  "type": "text"
-  // No 'required' key = nullable
-}
-
-// Also nullable
-{
-  "name": "notes",
-  "type": "text",
-  "required": false
-}
-```
-
----
-
-### Composite Unique Keys
-
-Create unique constraints across multiple columns using the `--composite-unique` option.
-
-**Format:**
-
-```json
-[
-  ["column1", "column2"],           // First composite unique
-  ["column3", "column4", "column5"] // Second composite unique
-]
-```
-
-**Naming Convention:**
-
-| Column Count | First Composite | Additional Composites |
-|--------------|----------------|----------------------|
-| 2 columns | `{table}_composite_unique` | `{table}_composite_unique_a`, `_b`, etc. |
-| 3+ columns | `{table}_multi_composite_unique` | `{table}_multi_composite_unique_a`, `_b`, etc. |
-
-**Example 1: Multiple Composites**
-
-```bash
-php artisan make:api-bundle Product \
-  --schema='[
-    {"name":"sku","type":"string","required":true},
-    {"name":"barcode","type":"string","required":true},
-    {"name":"warehouse_id","type":"unsignedBigInteger","required":true}
-  ]' \
-  --composite-unique='[["sku","warehouse_id"],["barcode","warehouse_id"]]'
-```
-
-**Generates:**
-```sql
--- First composite: products_composite_unique
-ALTER TABLE products ADD UNIQUE products_composite_unique (sku, warehouse_id);
-
--- Second composite: products_composite_unique_a
-ALTER TABLE products ADD UNIQUE products_composite_unique_a (barcode, warehouse_id);
-```
-
-**Output:**
-```
-Migration created: 2024_01_15_120000_create_products_table.php
-
-📋 Composite Unique Keys Created:
-   • products_composite_unique: [sku, warehouse_id]
-   • products_composite_unique_a: [barcode, warehouse_id]
-   ⚠️  Multiple composite unique keys detected - using suffix notation (_a, _b, etc.)
-```
-
-**Example 2: Multi-Composite (3+ columns)**
-
-```bash
-php artisan make:api-bundle Inventory \
-  --schema='[
-    {"name":"product_id","type":"unsignedBigInteger","required":true},
-    {"name":"warehouse_id","type":"unsignedBigInteger","required":true},
-    {"name":"batch_number","type":"string","required":true}
-  ]' \
-  --composite-unique='[["product_id","warehouse_id","batch_number"]]'
-```
-
-**Generates:**
-```sql
--- Unique constraint name: inventories_multi_composite_unique
-ALTER TABLE inventories ADD UNIQUE inventories_multi_composite_unique 
-  (product_id, warehouse_id, batch_number);
-```
-
-**Pivot Tables (Automatic):**
-
-Pivot tables automatically get composite unique constraints on their foreign keys:
-
-```bash
-php artisan make:api-migration post_tag \
-  --schema='[{"name":"post_id","type":"unsignedBigInteger"},{"name":"tag_id","type":"unsignedBigInteger"}]' \
-  --pivot=true
-```
-
-**Automatically generates:**
-```php
-$table->primary(['post_id', 'tag_id']);                                    // Composite PK
-$table->unique(['post_id', 'tag_id'], 'post_tag_composite_unique');       // Composite Unique
-```
-
-**Use Cases:**
-
-1. **Warehouse Systems**: Same SKU in different warehouses
-   ```json
-   [["sku", "warehouse_id"]]
-   ```
-
-2. **Localization**: Same slug in different languages
-   ```json
-   [["slug", "language_id"]]
-   ```
-
-3. **Versioning**: Unique versions of documents
-   ```json
-   [["document_id", "version"]]
-   ```
+[[ DELETED ]]
 
 **Best Practices:**
 
@@ -1090,154 +339,11 @@ $table->unique(['post_id', 'tag_id'], 'post_tag_composite_unique');       // Com
 
 ### Examples
 
-#### Example 1: Blog Post with Comments and Relationships
-
-```bash
-# Create User (if not exists)
-php artisan make:api-bundle User \
-  --schema='[
-    {"name":"name","type":"string","required":true},
-    {"name":"email","type":"string","required":true,"unique":true},
-    {"name":"password","type":"string","required":true}
-  ]'
-
-# Create Post model
-php artisan make:api-bundle Post \
-  --schema='[
-    {"name":"title","type":"string","required":true},
-    {"name":"slug","type":"string","required":true,"unique":true},
-    {"name":"content","type":"text","required":true},
-    {"name":"published_at","type":"datetime"},
-    {"name":"user_id","type":"unsignedBigInteger","required":true,"isForeignKey":true,"foreignTable":"user"}
-  ]' \
-  --soft-deletes
-
-# Create Comment model
-php artisan make:api-bundle Comment \
-  --schema='[
-    {"name":"content","type":"text","required":true},
-    {"name":"post_id","type":"unsignedBigInteger","required":true,"isForeignKey":true,"foreignTable":"post"},
-    {"name":"user_id","type":"unsignedBigInteger","required":true,"isForeignKey":true,"foreignTable":"user"}
-  ]' \
-  --soft-deletes
-```
-
-**Then add inverse relationships manually:**
-
-```php
-// app/Models/User.php
-public function posts()
-{
-    return $this->hasMany(Post::class);
-}
-
-public function comments()
-{
-    return $this->hasMany(Comment::class);
-}
-
-// app/Models/Post.php
-public function comments()
-{
-    return $this->hasMany(Comment::class);
-}
-```
-
----
-
-#### Example 2: E-commerce Products with Tags (Many-to-Many)
-
-```bash
-# Step 1: Create Product
-php artisan make:api-bundle Product \
-  --schema='[
-    {"name":"name","type":"string","required":true},
-    {"name":"sku","type":"string","required":true,"unique":true},
-    {"name":"price","type":"decimal","required":true},
-    {"name":"stock","type":"integer","default":0},
-    {"name":"is_active","type":"boolean","default":true}
-  ]' \
-  --soft-deletes
-
-# Step 2: Create Tag
-php artisan make:api-bundle Tag \
-  --schema='[
-    {"name":"name","type":"string","required":true,"unique":true},
-    {"name":"slug","type":"string","required":true,"unique":true}
-  ]'
-
-# Step 3: Create Pivot (note: alphabetical order!)
-php artisan make:api-migration product_tag \
-  --schema='[
-    {"name":"product_id","type":"unsignedBigInteger"},
-    {"name":"tag_id","type":"unsignedBigInteger"}
-  ]' \
-  --pivot=true
-
-# Step 4: Run migrations
-php artisan migrate
-```
-
-**Add Many-to-Many relationships:**
-
-```php
-// app/Models/Product.php
-public function tags()
-{
-    return $this->belongsToMany(Tag::class, 'product_tag');
-}
-
-// app/Models/Tag.php
-public function products()
-{
-    return $this->belongsToMany(Product::class, 'product_tag');
-}
-```
-
----
-
-#### Example 3: Warehouse Inventory System
-
-```bash
-# Create Warehouse
-php artisan make:api-bundle Warehouse \
-  --schema='[
-    {"name":"name","type":"string","required":true},
-    {"name":"code","type":"string","required":true,"unique":true},
-    {"name":"location","type":"string","required":true}
-  ]'
-
-# Create Product with multiple composite uniques
-php artisan make:api-bundle Product \
-  --schema='[
-    {"name":"name","type":"string","required":true},
-    {"name":"sku","type":"string","required":true},
-    {"name":"barcode","type":"string","required":true},
-    {"name":"description","type":"text"}
-  ]'
-
-# Create Inventory with multi-composite unique
-php artisan make:api-bundle Inventory \
-  --schema='[
-    {"name":"product_id","type":"unsignedBigInteger","required":true,"isForeignKey":true,"foreignTable":"product"},
-    {"name":"warehouse_id","type":"unsignedBigInteger","required":true,"isForeignKey":true,"foreignTable":"warehouse"},
-    {"name":"quantity","type":"integer","default":0},
-    {"name":"batch_number","type":"string","required":true},
-    {"name":"expiry_date","type":"date"}
-  ]' \
-  --composite-unique='[["product_id","warehouse_id","batch_number"]]'
-```
-
-**This ensures:**
-- Each product can exist in multiple warehouses
-- Each product in a warehouse can have multiple batches
-- No duplicate product+warehouse+batch combinations
-
----
+[[ DELETED ]]
 
 ## 📁 Generated Files
 
-After running `make:api-bundle Video`, you'll have:
+After running `make:api-bundle Video`, (if you keep the defaults in the config file) you'll have:
 
 ```
 app/
@@ -1269,6 +375,8 @@ tests/
 routes/
 └── api.php (updated)
 ```
+
+NOTE: You are able to set the directory paths for each of these from within the config file, and that is where each class will be placed.
 
 ---
 
@@ -1338,90 +446,15 @@ describe('Video Batch Operations', function () {
 
 ### Batch Operations
 
-All generated APIs support batch operations out of the box:
-
-#### Batch Show (Get Multiple by IDs)
-
-```bash
-POST /api/videos/batch/show
-Content-Type: application/json
-
-{
-  "ids": [1, 2, 3, 4, 5]
-}
-```
-
-**Response:**
-```json
-{
-  "data": [
-    {"id": 1, "title": "Video 1"},
-    {"id": 2, "title": "Video 2"},
-    {"id": 3, "title": "Video 3"}
-  ],
-  "count": 3
-}
-```
-
-#### Batch Create
-
-```bash
-POST /api/videos/batch
-Content-Type: application/json
-
-{
-  "records": [
-    {"title": "Video 1", "duration": 120},
-    {"title": "Video 2", "duration": 180},
-    {"title": "Video 3", "duration": 90}
-  ]
-}
-```
-
-**Response:**
-```json
-{
-  "data": [
-    {"id": 1, "title": "Video 1", "duration": 120},
-    {"id": 2, "title": "Video 2", "duration": 180},
-    {"id": 3, "title": "Video 3", "duration": 90}
-  ],
-  "count": 3,
-  "message": "3 resources created successfully."
-}
-```
-
-#### Batch Update
-
-```bash
-PATCH /api/videos/batch
-Content-Type: application/json
-
-{
-  "records": [
-    {"id": 1, "title": "Updated Video 1"},
-    {"id": 2, "duration": 200},
-    {"id": 3, "title": "Updated Video 3", "duration": 150}
-  ]
-}
-```
-
-#### Batch Delete
-
-```bash
-DELETE /api/videos/batch
-Content-Type: application/json
-
-{
-  "ids": [1, 2, 3]
-}
-```
+[[DELETED]]
 
 ---
 
 ### Soft Deletes
 
 When using `--soft-deletes`, additional endpoints are generated:
+
+[[NEEDS EXPANSION - This should also set up the SoftDelete REPO(S)/INTERFACE(S)]]
 
 #### Restore Single Record
 
@@ -1523,24 +556,12 @@ $this->app->bind(
 php artisan make:api-bundle User --schema='[...]'
 
 # Then create Video with user_id foreign key
-php artisan make:api-bundle Video --schema='[...,{"name":"user_id","type":"unsignedBigInteger","isForeignKey":true,"foreignTable":"user"}]'
+php artisan make:api-bundle Video --schema=[[DELETED]]
 ```
 
 ### Issue: Pivot table creation fails
 
-**Problem:** Wrong order or trying to use `make:api-bundle`
-
-**Solution:**
-
-```bash
-# WRONG
-php artisan make:api-bundle tag_post --pivot=true
-
-# CORRECT - alphabetical order + use make:api-migration
-php artisan make:api-migration post_tag \
-  --schema='[{"name":"post_id","type":"unsignedBigInteger"},{"name":"tag_id","type":"unsignedBigInteger"}]' \
-  --pivot=true
-```
+[[DELETED]]
 
 ### Issue: Routes not working
 
@@ -1553,7 +574,7 @@ php artisan route:cache
 
 ### Issue: Validation not working
 
-**Solution:** Check that your FormRequest's `authorize()` method returns `true`:
+[[DELETED]]
 
 ```php
 public function authorize(): bool
