@@ -1,0 +1,22 @@
+<?php
+
+namespace {{ namespace }};
+
+use {{ model_namespace }}\{{ class }};
+use {{ interface_namespace }}\{{ class }}BulkRepositoryInterface;
+use LaravelArchitect\Base\Traits\BulkEloquentRepository;
+
+/**
+ * Eloquent implementation of {{ class }} bulk repository operations.
+ */
+class Eloquent{{ class }}BulkRepository implements {{ class }}BulkRepositoryInterface
+{
+    use BulkEloquentRepository;
+
+    /**
+     * The model instance.
+     *
+     * @var string
+     */
+    protected string $model = {{ class }}::class;
+}

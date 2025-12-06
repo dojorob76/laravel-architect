@@ -1,0 +1,13 @@
+<?php
+
+namespace {{ namespace }};
+
+use LaravelArchitect\Base\Contracts\BulkSoftDeleteRepositoryInterface;
+
+/**
+ * Interface for {{ class }} bulk soft delete repository operations.
+ */
+interface {{ class }}BulkSoftDeleteRepositoryInterface extends BulkSoftDeleteRepositoryInterface
+{
+    //
+}

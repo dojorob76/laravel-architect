@@ -1,0 +1,29 @@
+<?php
+
+namespace {{ namespace }};
+
+use {{ model_namespace }}\{{ class }};
+use {{ interface_namespace }}\{{ class }}BulkRepositoryInterface;
+use LaravelArchitect\Base\Traits\BulkPostgresRepository;
+
+/**
+ * PostgreSQL implementation of {{ class }} bulk repository operations.
+ */
+class Postgres{{ class }}BulkRepository implements {{ class }}BulkRepositoryInterface
+{
+    use BulkPostgresRepository;
+
+    /**
+     * The model instance.
+     *
+     * @var string
+     */
+    protected string $model = {{ class }}::class;
+
+    /**
+     * The table name.
+     *
+     * @var string
+     */
+    protected string $table = '{{ table }}';
+}

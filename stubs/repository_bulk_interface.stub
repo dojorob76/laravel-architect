@@ -1,0 +1,13 @@
+<?php
+
+namespace {{ namespace }};
+
+use LaravelArchitect\Base\Contracts\BulkRepositoryInterface;
+
+/**
+ * Interface for {{ class }} bulk repository operations.
+ */
+interface {{ class }}BulkRepositoryInterface extends BulkRepositoryInterface
+{
+    //
+}

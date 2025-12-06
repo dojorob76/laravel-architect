@@ -1,0 +1,29 @@
+<?php
+
+namespace {{ namespace }};
+
+use {{ model_namespace }}\{{ class }};
+use {{ interface_namespace }}\{{ class }}SoftDeleteRepositoryInterface;
+use LaravelArchitect\Base\Traits\SoftDeleteMySQLRepository;
+
+/**
+ * MySQL implementation of {{ class }} soft delete repository operations.
+ */
+class MySQL{{ class }}SoftDeleteRepository implements {{ class }}SoftDeleteRepositoryInterface
+{
+    use SoftDeleteMySQLRepository;
+
+    /**
+     * The model instance.
+     *
+     * @var string
+     */
+    protected string $model = {{ class }}::class;
+
+    /**
+     * The table name.
+     *
+     * @var string
+     */
+    protected string $table = '{{ table }}';
+}

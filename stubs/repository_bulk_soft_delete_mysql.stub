@@ -1,0 +1,29 @@
+<?php
+
+namespace {{ namespace }};
+
+use {{ model_namespace }}\{{ class }};
+use {{ interface_namespace }}\{{ class }}BulkSoftDeleteRepositoryInterface;
+use LaravelArchitect\Base\Traits\BulkSoftDeleteMySQLRepository;
+
+/**
+ * MySQL implementation of {{ class }} bulk soft delete repository operations.
+ */
+class MySQL{{ class }}BulkSoftDeleteRepository implements {{ class }}BulkSoftDeleteRepositoryInterface
+{
+    use BulkSoftDeleteMySQLRepository;
+
+    /**
+     * The model instance.
+     *
+     * @var string
+     */
+    protected string $model = {{ class }}::class;
+
+    /**
+     * The table name.
+     *
+     * @var string
+     */
+    protected string $table = '{{ table }}';
+}

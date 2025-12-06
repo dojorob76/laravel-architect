@@ -1,0 +1,29 @@
+<?php
+
+namespace {{ namespace }};
+
+use {{ model_namespace }}\{{ class }};
+use {{ interface_namespace }}\{{ class }}BulkRepositoryInterface;
+use LaravelArchitect\Base\Traits\BulkMySQLRepository;
+
+/**
+ * MySQL implementation of {{ class }} bulk repository operations.
+ */
+class MySQL{{ class }}BulkRepository implements {{ class }}BulkRepositoryInterface
+{
+    use BulkMySQLRepository;
+
+    /**
+     * The model instance.
+     *
+     * @var string
+     */
+    protected string $model = {{ class }}::class;
+
+    /**
+     * The table name.
+     *
+     * @var string
+     */
+    protected string $table = '{{ table }}';
+}

@@ -1,0 +1,13 @@
+<?php
+
+namespace {{ namespace }};
+
+use LaravelArchitect\Base\Contracts\SoftDeleteRepositoryInterface;
+
+/**
+ * Interface for {{ class }} soft delete repository operations.
+ */
+interface {{ class }}SoftDeleteRepositoryInterface extends SoftDeleteRepositoryInterface
+{
+    //
+}
