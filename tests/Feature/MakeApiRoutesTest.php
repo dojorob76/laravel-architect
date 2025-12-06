@@ -92,7 +92,7 @@ test('proper controller namespacing', function () {
 
     $content = File::get(base_path('routes/api.php'));
 
-    expect($content)->toContain('use App\Http\Controllers\Api\ProductController');
+    expect($content)->toContain('use ' . ConfigHelper::namespace('controllers') . '\ProductController');
 });
 
 test('adds use statement for controller', function () {
@@ -100,7 +100,7 @@ test('adds use statement for controller', function () {
 
     $content = File::get(base_path('routes/api.php'));
 
-    expect($content)->toContain('use App\Http\Controllers\Api\CategoryController;');
+    expect($content)->toContain('use ' . ConfigHelper::namespace('controllers') . '\CategoryController;');
 });
 
 test('uses snake case for multi word models', function () {

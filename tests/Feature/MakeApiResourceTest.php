@@ -16,7 +16,7 @@ test('creates resource file', function () {
 
     $content = $this->getGeneratedFileContent('resources', 'VideoResource.php');
 
-    expect($content)->toContain('namespace App\Http\Resources')
+    expect($content)->toContain('namespace ' . ConfigHelper::namespace('resources'))
         ->and($content)->toContain('class VideoResource')
         ->and($content)->toContain('extends JsonResource');
 });
@@ -28,7 +28,7 @@ test('creates collection file', function () {
 
     $content = $this->getGeneratedFileContent('resources', 'VideoCollection.php');
 
-    expect($content)->toContain('namespace App\Http\Resources')
+    expect($content)->toContain('namespace ' . ConfigHelper::namespace('resources'))
         ->and($content)->toContain('class VideoCollection')
         ->and($content)->toContain('extends ResourceCollection');
 });
@@ -83,8 +83,8 @@ test('foreign keys generate nested resource with whenLoaded', function () {
 
     $content = $this->getGeneratedFileContent('resources', 'CommentResource.php');
 
-    expect($content)->toContain("'post' => new \\App\\Http\\Resources\\PostResource(\$this->whenLoaded('post'))")
-        ->and($content)->toContain("'user' => new \\App\\Http\\Resources\\UserResource(\$this->whenLoaded('user'))");
+    expect($content)->toContain("'post' => new \\" . ConfigHelper::namespace('resources') . "\\PostResource(\$this->whenLoaded('post'))")
+        ->and($content)->toContain("'user' => new \\" . ConfigHelper::namespace('resources') . "\\UserResource(\$this->whenLoaded('user'))");
 });
 
 test('collection includes pagination meta', function () {

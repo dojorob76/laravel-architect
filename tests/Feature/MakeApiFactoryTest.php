@@ -16,7 +16,7 @@ test('creates factory file', function () {
 
     $content = $this->getGeneratedFileContent('factories', 'VideoFactory.php');
 
-    expect($content)->toContain('namespace Database\Factories')
+    expect($content)->toContain('namespace ' . ConfigHelper::namespace('factories'))
         ->and($content)->toContain('class VideoFactory')
         ->and($content)->toContain('extends Factory');
 });
@@ -140,7 +140,7 @@ test('foreign keys use model factory', function () {
 
     $content = $this->getGeneratedFileContent('factories', 'VideoFactory.php');
 
-    expect($content)->toContain("'user_id' => \\App\\Models\\User::factory()");
+    expect($content)->toContain("'user_id' => \\" . ConfigHelper::namespace('models') . "\\User::factory()");
 });
 
 test('composite unique fields marked as unique', function () {

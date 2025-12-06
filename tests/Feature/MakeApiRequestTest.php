@@ -16,7 +16,7 @@ test('creates request file with proper namespace', function () {
 
     $content = $this->getGeneratedFileContent('requests', 'VideoRequest.php');
 
-    expect($content)->toContain('namespace App\Http\Requests')
+    expect($content)->toContain('namespace ' . ConfigHelper::namespace('requests'))
         ->and($content)->toContain('class VideoRequest')
         ->and($content)->toContain('extends BaseFormRequest');
 });

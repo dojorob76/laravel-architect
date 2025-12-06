@@ -94,7 +94,7 @@ describe('buildClassInfo method', function () {
             expect($result)->toHaveKeys(['name', 'import', 'path'])
                 ->and($result['name'])->toBe('EloquentVideoRepository')
                 ->and($result['import'])->toBe('LaravelArchitect\\Base\\BaseEloquentRepository')
-                ->and($result['path'])->toContain('app/Repositories/EloquentVideoRepository.php');
+                ->and($result['path'])->toContain(ConfigHelper::path('repositories') . '/EloquentVideoRepository.php');
         });
 
         test('returns correct info for mysql CRUD repository', function () {
@@ -108,7 +108,7 @@ describe('buildClassInfo method', function () {
 
             expect($result['name'])->toBe('MySQLVideoRepository')
                 ->and($result['import'])->toBe('LaravelArchitect\\Base\\BaseMySQLRepository')
-                ->and($result['path'])->toContain('app/Repositories/MySQLVideoRepository.php');
+                ->and($result['path'])->toContain(ConfigHelper::path('repositories') . '/MySQLVideoRepository.php');
         });
 
         test('returns correct info for postgres CRUD repository', function () {
@@ -122,7 +122,7 @@ describe('buildClassInfo method', function () {
 
             expect($result['name'])->toBe('PostgresVideoRepository')
                 ->and($result['import'])->toBe('LaravelArchitect\\Base\\BasePostgresRepository')
-                ->and($result['path'])->toContain('app/Repositories/PostgresVideoRepository.php');
+                ->and($result['path'])->toContain(ConfigHelper::path('repositories') . '/PostgresVideoRepository.php');
         });
     });
 
@@ -138,7 +138,7 @@ describe('buildClassInfo method', function () {
 
             expect($result['name'])->toBe('EloquentVideoBulkRepository')
                 ->and($result['import'])->toBe('LaravelArchitect\\Base\\Traits\\BulkEloquentRepository')
-                ->and($result['path'])->toContain('app/Repositories/EloquentVideoBulkRepository.php');
+                ->and($result['path'])->toContain(ConfigHelper::path('repositories') . '/EloquentVideoBulkRepository.php');
         });
 
         test('returns correct info for mysql bulk repository', function () {
@@ -152,7 +152,7 @@ describe('buildClassInfo method', function () {
 
             expect($result['name'])->toBe('MySQLVideoBulkRepository')
                 ->and($result['import'])->toBe('LaravelArchitect\\Base\\Traits\\BulkMySQLRepository')
-                ->and($result['path'])->toContain('app/Repositories/MySQLVideoBulkRepository.php');
+                ->and($result['path'])->toContain(ConfigHelper::path('repositories') . '/MySQLVideoBulkRepository.php');
         });
 
         test('returns correct info for postgres bulk repository', function () {
@@ -166,7 +166,7 @@ describe('buildClassInfo method', function () {
 
             expect($result['name'])->toBe('PostgresVideoBulkRepository')
                 ->and($result['import'])->toBe('LaravelArchitect\\Base\\Traits\\BulkPostgresRepository')
-                ->and($result['path'])->toContain('app/Repositories/PostgresVideoBulkRepository.php');
+                ->and($result['path'])->toContain(ConfigHelper::path('repositories') . '/PostgresVideoBulkRepository.php');
         });
     });
 
@@ -182,7 +182,7 @@ describe('buildClassInfo method', function () {
 
             expect($result['name'])->toBe('EloquentVideoSoftDeleteRepository')
                 ->and($result['import'])->toBe('LaravelArchitect\\Base\\Traits\\SoftDeleteEloquentRepository')
-                ->and($result['path'])->toContain('app/Repositories/EloquentVideoSoftDeleteRepository.php');
+                ->and($result['path'])->toContain(ConfigHelper::path('repositories') . '/EloquentVideoSoftDeleteRepository.php');
         });
 
         test('returns correct info for mysql soft delete repository', function () {
@@ -196,7 +196,7 @@ describe('buildClassInfo method', function () {
 
             expect($result['name'])->toBe('MySQLVideoSoftDeleteRepository')
                 ->and($result['import'])->toBe('LaravelArchitect\\Base\\Traits\\SoftDeleteMySQLRepository')
-                ->and($result['path'])->toContain('app/Repositories/MySQLVideoSoftDeleteRepository.php');
+                ->and($result['path'])->toContain(ConfigHelper::path('repositories') . '/MySQLVideoSoftDeleteRepository.php');
         });
 
         test('returns correct info for postgres soft delete repository', function () {
@@ -210,7 +210,7 @@ describe('buildClassInfo method', function () {
 
             expect($result['name'])->toBe('PostgresVideoSoftDeleteRepository')
                 ->and($result['import'])->toBe('LaravelArchitect\\Base\\Traits\\SoftDeletePostgresRepository')
-                ->and($result['path'])->toContain('app/Repositories/PostgresVideoSoftDeleteRepository.php');
+                ->and($result['path'])->toContain(ConfigHelper::path('repositories') . '/PostgresVideoSoftDeleteRepository.php');
         });
     });
 
@@ -226,7 +226,7 @@ describe('buildClassInfo method', function () {
 
             expect($result['name'])->toBe('EloquentVideoBulkSoftDeleteRepository')
                 ->and($result['import'])->toBe('LaravelArchitect\\Base\\Traits\\BulkSoftDeleteEloquentRepository')
-                ->and($result['path'])->toContain('app/Repositories/EloquentVideoBulkSoftDeleteRepository.php');
+                ->and($result['path'])->toContain(ConfigHelper::path('repositories') . '/EloquentVideoBulkSoftDeleteRepository.php');
         });
 
         test('returns correct info for mysql bulk soft delete repository', function () {
@@ -240,7 +240,7 @@ describe('buildClassInfo method', function () {
 
             expect($result['name'])->toBe('MySQLVideoBulkSoftDeleteRepository')
                 ->and($result['import'])->toBe('LaravelArchitect\\Base\\Traits\\BulkSoftDeleteMySQLRepository')
-                ->and($result['path'])->toContain('app/Repositories/MySQLVideoBulkSoftDeleteRepository.php');
+                ->and($result['path'])->toContain(ConfigHelper::path('repositories') . '/MySQLVideoBulkSoftDeleteRepository.php');
         });
 
         test('returns correct info for postgres bulk soft delete repository', function () {
@@ -254,7 +254,7 @@ describe('buildClassInfo method', function () {
 
             expect($result['name'])->toBe('PostgresVideoBulkSoftDeleteRepository')
                 ->and($result['import'])->toBe('LaravelArchitect\\Base\\Traits\\BulkSoftDeletePostgresRepository')
-                ->and($result['path'])->toContain('app/Repositories/PostgresVideoBulkSoftDeleteRepository.php');
+                ->and($result['path'])->toContain(ConfigHelper::path('repositories') . '/PostgresVideoBulkSoftDeleteRepository.php');
         });
     });
 
@@ -270,7 +270,7 @@ describe('buildClassInfo method', function () {
 
             expect($result['name'])->toBe('VideoRepositoryInterface')
                 ->and($result['import'])->toBe('LaravelArchitect\\Base\\Contracts\\BaseRepositoryInterface')
-                ->and($result['path'])->toContain('app/Contracts/VideoRepositoryInterface.php');
+                ->and($result['path'])->toContain(ConfigHelper::path('contracts') . '/VideoRepositoryInterface.php');
         });
 
         test('returns correct info for bulk interface', function () {
@@ -284,7 +284,7 @@ describe('buildClassInfo method', function () {
 
             expect($result['name'])->toBe('VideoBulkRepositoryInterface')
                 ->and($result['import'])->toBe('LaravelArchitect\\Base\\Contracts\\BulkRepositoryInterface')
-                ->and($result['path'])->toContain('app/Contracts/VideoBulkRepositoryInterface.php');
+                ->and($result['path'])->toContain(ConfigHelper::path('contracts') . '/VideoBulkRepositoryInterface.php');
         });
 
         test('returns correct info for soft delete interface', function () {
@@ -298,7 +298,7 @@ describe('buildClassInfo method', function () {
 
             expect($result['name'])->toBe('VideoSoftDeleteRepositoryInterface')
                 ->and($result['import'])->toBe('LaravelArchitect\\Base\\Contracts\\SoftDeleteRepositoryInterface')
-                ->and($result['path'])->toContain('app/Contracts/VideoSoftDeleteRepositoryInterface.php');
+                ->and($result['path'])->toContain(ConfigHelper::path('contracts') . '/VideoSoftDeleteRepositoryInterface.php');
         });
 
         test('returns correct info for bulk soft delete interface', function () {
@@ -312,7 +312,7 @@ describe('buildClassInfo method', function () {
 
             expect($result['name'])->toBe('VideoBulkSoftDeleteRepositoryInterface')
                 ->and($result['import'])->toBe('LaravelArchitect\\Base\\Contracts\\BulkSoftDeleteRepositoryInterface')
-                ->and($result['path'])->toContain('app/Contracts/VideoBulkSoftDeleteRepositoryInterface.php');
+                ->and($result['path'])->toContain(ConfigHelper::path('contracts') . '/VideoBulkSoftDeleteRepositoryInterface.php');
         });
 
         test('interface info is driver-agnostic', function () {
