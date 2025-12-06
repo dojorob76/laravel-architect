@@ -78,16 +78,12 @@ class MakeApiRepositoryCommand extends Command
 
         $this->createInterface($files, $className, $interfaceNamespace);
 
-        if ($driver === 'all' || $driver === 'eloquent') {
-            $this->createEloquentRepository($files, $className, $namespace, $interfaceNamespace, $modelNamespace);
-        }
-
-        if ($driver === 'all' || $driver === 'mysql') {
-            $this->createMySQLRepository($files, $className, $namespace, $interfaceNamespace, $modelNamespace, $tableName);
-        }
-
-        if ($driver === 'all' || $driver === 'postgres') {
-            $this->createPostgresRepository($files, $className, $namespace, $interfaceNamespace, $modelNamespace, $tableName);
+        if ($driver === 'all') {
+            $this->createCrudRepository($files, 'eloquent', $className, $namespace, $interfaceNamespace, $modelNamespace, $tableName);
+            $this->createCrudRepository($files, 'mysql', $className, $namespace, $interfaceNamespace, $modelNamespace, $tableName);
+            $this->createCrudRepository($files, 'postgres', $className, $namespace, $interfaceNamespace, $modelNamespace, $tableName);
+        } else {
+            $this->createCrudRepository($files, $driver, $className, $namespace, $interfaceNamespace, $modelNamespace, $tableName);
         }
 
         $this->info("Repositories created for {$className}");
@@ -240,44 +236,93 @@ class MakeApiRepositoryCommand extends Command
         $this->writeFile($files, $path, $content);
     }
 
-    protected function createEloquentRepository(Filesystem $files, string $className, string $namespace, string $interfaceNamespace, string $modelNamespace): void
-    {
-        $content = $this->processStub('repository_eloquent', [
-            'namespace' => $namespace,
-            'interface_namespace' => $interfaceNamespace,
-            'model_namespace' => $modelNamespace,
-            'class' => $className,
-        ]);
+    /**
+     * Create the CRUD repository implementation.
+     *
+     * Uses buildClassInfo() to get class names, imports, and paths.
+     */
+    protected function createCrudRepository(
+        Filesystem $files,
+        string $driver,
+        string $className,
+        string $namespace,
+        string $interfaceNamespace,
+        string $modelNamespace,
+        string $tableName
+    ): void {
+        // Use buildClassInfo() for all naming - NO hardcoded values
+        $repoInfo = $this->buildClassInfo($driver, $className, 'crud', 'repository');
+        $baseInfo = $this->buildClassInfo($driver, $className, 'crud', 'base');
 
-        $path = $this->getRepositoryPath($className, 'Eloquent');
-        $this->writeFile($files, $path, $content);
-    }
+        // Get driver-specific properties/constructor
+        $driverPlaceholders = $this->getDriverSpecificPlaceholders($driver, $className, $tableName, $modelNamespace);
 
-    protected function createMySQLRepository(Filesystem $files, string $className, string $namespace, string $interfaceNamespace, string $modelNamespace, string $tableName): void
-    {
-        $content = $this->processStub('repository_mysql', [
-            'namespace' => $namespace,
-            'interface_namespace' => $interfaceNamespace,
-            'model_namespace' => $modelNamespace,
-            'class' => $className,
-            'table' => $tableName,
-        ]);
-
-        $path = $this->getRepositoryPath($className, 'MySQL');
-        $this->writeFile($files, $path, $content);
-    }
-
-    protected function createPostgresRepository(Filesystem $files, string $className, string $namespace, string $interfaceNamespace, string $modelNamespace, string $tableName): void
-    {
-        $content = $this->processStub('repository_postgres', [
+        $content = $this->processStub('repository', [
             'namespace' => $namespace,
             'interface_namespace' => $interfaceNamespace,
             'model_namespace' => $modelNamespace,
             'class' => $className,
             'table' => $tableName,
+            'driver' => self::DRIVER_NAME[$driver],
+            'base_class_import' => $baseInfo['import'],
+            'base_class' => $baseInfo['name'],
+            'properties' => $driverPlaceholders['properties'],
+            'constructor' => $driverPlaceholders['constructor'],
         ]);
 
-        $path = $this->getRepositoryPath($className, 'Postgres');
-        $this->writeFile($files, $path, $content);
+        // Use path from buildClassInfo()
+        $this->writeFile($files, $repoInfo['path'], $content);
+    }
+
+    /**
+     * Get driver-specific placeholder values for properties and constructor.
+     *
+     * This method handles the structural differences between Eloquent (uses constructor)
+     * and MySQL/Postgres (use properties). All class naming is handled by buildClassInfo().
+     *
+     * @param string $driver One of: 'eloquent', 'mysql', 'postgres'
+     * @param string $className The model class name
+     * @param string $tableName The database table name
+     * @param string $modelNamespace The model namespace from config
+     * @return array{properties: string, constructor: string}
+     */
+    protected function getDriverSpecificPlaceholders(
+        string $driver,
+        string $className,
+        string $tableName,
+        string $modelNamespace
+    ): array {
+        if ($driver === 'eloquent') {
+            return [
+                'properties' => '',
+                'constructor' => <<<PHP
+
+    /**
+     * Create a new repository instance.
+     */
+    public function __construct({$className} \$model)
+    {
+        parent::__construct(\$model);
+    }
+PHP,
+            ];
+        }
+
+        // MySQL and PostgreSQL use properties, no constructor
+        return [
+            'properties' => <<<PHP
+
+    /**
+     * The database table name.
+     */
+    protected string \$table = '{$tableName}';
+
+    /**
+     * The model class for hydration.
+     */
+    protected string \$modelClass = '{$modelNamespace}\\{$className}';
+PHP,
+            'constructor' => '',
+        ];
     }
 }

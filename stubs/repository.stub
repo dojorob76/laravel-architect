@@ -1,0 +1,15 @@
+<?php
+
+namespace {{ namespace }};
+
+use {{ model_namespace }}\{{ class }};
+use {{ interface_namespace }}\{{ class }}RepositoryInterface;
+use {{ base_class_import }};
+
+/**
+ * {{ driver }} implementation of {{ class }} repository.
+ */
+class {{ driver }}{{ class }}Repository extends {{ base_class }} implements {{ class }}RepositoryInterface
+{
+{{ properties }}{{ constructor }}
+}

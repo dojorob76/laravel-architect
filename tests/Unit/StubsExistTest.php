@@ -15,10 +15,8 @@ test('all required stub files exist', function () {
         'factory.stub',
         'migration.stub',
         'model.stub',
-        'repository_eloquent.stub',
+        'repository.stub', // Phase 2.5: Consolidated CRUD stub (replaces repository_eloquent/mysql/postgres)
         'repository_interface.stub',
-        'repository_mysql.stub',
-        'repository_postgres.stub',
         'request.stub',
         'resource.stub',
         'resource_collection.stub',
