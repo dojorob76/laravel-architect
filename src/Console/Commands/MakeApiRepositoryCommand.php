@@ -450,6 +450,31 @@ class MakeApiRepositoryCommand extends Command
         $this->writeFile($files, $interfaceInfo['path'], $content);
     }
 
+    /**
+     * Get the drivers for binding output for an operation type.
+     * Returns an array of drivers. If "all" was specified, returns all three drivers.
+     *
+     * @param string $operationType One of: 'crud', 'bulk', 'soft_delete', 'bulk_soft_delete'
+     * @return array<string> Array of driver keys (e.g., ['eloquent'] or ['eloquent', 'mysql', 'postgres'])
+     */
+    protected function getDriversForBindingOutput(string $operationType): array
+    {
+        $optionMap = [
+            'crud' => 'crud-driver',
+            'bulk' => 'bulk-driver',
+            'soft_delete' => 'soft-delete-driver',
+            'bulk_soft_delete' => 'bulk-soft-delete-driver',
+        ];
+
+        $cliValue = $this->option($optionMap[$operationType]);
+
+        if ($cliValue === 'all') {
+            return array_keys(self::DRIVER_NAME);
+        }
+
+        return [$this->resolveDriver($operationType)];
+    }
+
     protected function outputBindingInstructions(string $className, string $interfaceNamespace, string $namespace, bool $softDeletes, bool $noBulk): void
     {
         $this->info("Repositories created for {$className}");
@@ -457,30 +482,34 @@ class MakeApiRepositoryCommand extends Command
         $this->comment("Add these bindings to a service provider:");
         $this->newLine();
 
-        // CRUD binding
-        $crudDriver = $this->resolveDriver('crud');
-        $crudPrefix = self::DRIVER_NAME[$crudDriver];
-        $this->comment("   \$this->app->bind(\\{$interfaceNamespace}\\{$className}RepositoryInterface::class, \\{$namespace}\\{$crudPrefix}{$className}Repository::class);");
-
-        // Bulk binding
-        if (! $noBulk) {
-            $bulkDriver = $this->resolveDriver('bulk');
-            $bulkPrefix = self::DRIVER_NAME[$bulkDriver];
-            $this->comment("   \$this->app->bind(\\{$interfaceNamespace}\\{$className}BulkRepositoryInterface::class, \\{$namespace}\\{$bulkPrefix}{$className}BulkRepository::class);");
+        // CRUD bindings
+        foreach ($this->getDriversForBindingOutput('crud') as $driver) {
+            $prefix = self::DRIVER_NAME[$driver];
+            $this->comment("   \$this->app->bind(\\{$interfaceNamespace}\\{$className}RepositoryInterface::class, \\{$namespace}\\{$prefix}{$className}Repository::class);");
         }
 
-        // SoftDelete binding
+        // Bulk bindings
+        if (!$noBulk) {
+            foreach ($this->getDriversForBindingOutput('bulk') as $driver) {
+                $prefix = self::DRIVER_NAME[$driver];
+                $this->comment("   \$this->app->bind(\\{$interfaceNamespace}\\{$className}BulkRepositoryInterface::class, \\{$namespace}\\{$prefix}{$className}BulkRepository::class);");
+            }
+        }
+
+        // SoftDelete bindings
         if ($softDeletes) {
-            $softDeleteDriver = $this->resolveDriver('soft_delete');
-            $softDeletePrefix = self::DRIVER_NAME[$softDeleteDriver];
-            $this->comment("   \$this->app->bind(\\{$interfaceNamespace}\\{$className}SoftDeleteRepositoryInterface::class, \\{$namespace}\\{$softDeletePrefix}{$className}SoftDeleteRepository::class);");
+            foreach ($this->getDriversForBindingOutput('soft_delete') as $driver) {
+                $prefix = self::DRIVER_NAME[$driver];
+                $this->comment("   \$this->app->bind(\\{$interfaceNamespace}\\{$className}SoftDeleteRepositoryInterface::class, \\{$namespace}\\{$prefix}{$className}SoftDeleteRepository::class);");
+            }
         }
 
-        // BulkSoftDelete binding
-        if ($softDeletes && ! $noBulk) {
-            $bulkSoftDeleteDriver = $this->resolveDriver('bulk_soft_delete');
-            $bulkSoftDeletePrefix = self::DRIVER_NAME[$bulkSoftDeleteDriver];
-            $this->comment("   \$this->app->bind(\\{$interfaceNamespace}\\{$className}BulkSoftDeleteRepositoryInterface::class, \\{$namespace}\\{$bulkSoftDeletePrefix}{$className}BulkSoftDeleteRepository::class);");
+        // BulkSoftDelete bindings
+        if ($softDeletes && !$noBulk) {
+            foreach ($this->getDriversForBindingOutput('bulk_soft_delete') as $driver) {
+                $prefix = self::DRIVER_NAME[$driver];
+                $this->comment("   \$this->app->bind(\\{$interfaceNamespace}\\{$className}BulkSoftDeleteRepositoryInterface::class, \\{$namespace}\\{$prefix}{$className}BulkSoftDeleteRepository::class);");
+            }
         }
     }
 

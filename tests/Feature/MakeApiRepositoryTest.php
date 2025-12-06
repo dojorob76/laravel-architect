@@ -31,7 +31,7 @@ test('creates eloquent repository by default', function () {
 test('creates mysql repository when specified', function () {
     Artisan::call('make:api-repository', [
         'name' => 'Video',
-        '--driver' => 'mysql'
+        '--crud-driver' => 'mysql'
     ]);
 
     $this->assertFileWasGenerated('repositories', 'MySQLVideoRepository.php');
@@ -42,7 +42,7 @@ test('creates mysql repository when specified', function () {
 test('creates postgres repository when specified', function () {
     Artisan::call('make:api-repository', [
         'name' => 'Video',
-        '--driver' => 'postgres'
+        '--crud-driver' => 'postgres'
     ]);
 
     $this->assertFileWasGenerated('repositories', 'PostgresVideoRepository.php');
@@ -52,7 +52,7 @@ test('creates postgres repository when specified', function () {
 test('creates all repository types when driver is all', function () {
     Artisan::call('make:api-repository', [
         'name' => 'Video',
-        '--driver' => 'all'
+        '--crud-driver' => 'all'
     ]);
 
     $this->assertFileWasGenerated('repositories', 'EloquentVideoRepository.php');

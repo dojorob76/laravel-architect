@@ -47,7 +47,7 @@ test('bulk interface stub has correct structure', function () {
 
     expect($content)
         ->toContain('namespace {{ namespace }}')
-        ->toContain('use LaravelArchitect\Base\Contracts\BulkRepositoryInterface')
+        ->toContain('use {{ base_interface_import }}')
         ->toContain('interface {{ class }}BulkRepositoryInterface extends BulkRepositoryInterface');
 });
 
@@ -57,7 +57,7 @@ test('soft delete interface stub has correct structure', function () {
 
     expect($content)
         ->toContain('namespace {{ namespace }}')
-        ->toContain('use LaravelArchitect\Base\Contracts\SoftDeleteRepositoryInterface')
+        ->toContain('use {{ base_interface_import }}')
         ->toContain('interface {{ class }}SoftDeleteRepositoryInterface extends SoftDeleteRepositoryInterface');
 });
 
@@ -67,7 +67,7 @@ test('bulk soft delete interface stub has correct structure', function () {
 
     expect($content)
         ->toContain('namespace {{ namespace }}')
-        ->toContain('use LaravelArchitect\Base\Contracts\BulkSoftDeleteRepositoryInterface')
+        ->toContain('use {{ base_interface_import }}')
         ->toContain('interface {{ class }}BulkSoftDeleteRepositoryInterface extends BulkSoftDeleteRepositoryInterface');
 });
 
