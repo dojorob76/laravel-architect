@@ -208,6 +208,118 @@ return [
 ];
 ```
 
+### Repository Drivers
+
+Laravel Architect supports three repository drivers: **Eloquent**, **MySQL**, and **PostgreSQL**. You can configure different drivers for different operation types.
+
+#### Driver Configuration
+
+Add a `drivers` section to your config to set defaults for each operation type:
+
+```php
+// config/api_scaffolding.php
+'drivers' => [
+    'crud' => 'eloquent',           // eloquent | mysql | postgres
+    'bulk' => 'eloquent',           // eloquent | mysql | postgres
+    'soft_delete' => 'eloquent',    // eloquent | mysql | postgres
+    'bulk_soft_delete' => 'eloquent', // eloquent | mysql | postgres
+],
+```
+
+#### CLI Driver Options
+
+Override config defaults per-command using CLI options:
+
+```bash
+# Use config defaults
+php artisan make:api-repository Video
+
+# Override specific drivers
+php artisan make:api-repository Video \
+    --crud-driver=eloquent \
+    --bulk-driver=postgres \
+    --soft-delete-driver=mysql
+
+# Generate all three driver implementations for an operation type
+php artisan make:api-repository Video --crud-driver=all
+```
+
+#### Generated Repositories
+
+Depending on flags, the following repositories are generated:
+
+| Flag Combination | Generated Repositories |
+|------------------|------------------------|
+| (default) | CRUD + Bulk |
+| `--soft-deletes` | CRUD + Bulk + SoftDelete + BulkSoftDelete |
+| `--no-bulk` | CRUD only |
+| `--no-bulk --soft-deletes` | CRUD + SoftDelete |
+
+#### Service Provider Bindings
+
+After generating repositories, bind interfaces to implementations in your `RepositoryServiceProvider`:
+
+```php
+// app/Providers/RepositoryServiceProvider.php
+<?php
+
+namespace App\Providers;
+
+use Illuminate\Support\ServiceProvider;
+
+// Interfaces
+use App\Contracts\VideoRepositoryInterface;
+use App\Contracts\VideoBulkRepositoryInterface;
+use App\Contracts\VideoSoftDeleteRepositoryInterface;
+use App\Contracts\VideoBulkSoftDeleteRepositoryInterface;
+
+// Implementations (use whichever driver you generated)
+use App\Repositories\EloquentVideoRepository;
+use App\Repositories\PostgresVideoBulkRepository;
+use App\Repositories\EloquentVideoSoftDeleteRepository;
+use App\Repositories\PostgresVideoBulkSoftDeleteRepository;
+
+class RepositoryServiceProvider extends ServiceProvider
+{
+    public function register(): void
+    {
+        // CRUD - using Eloquent
+        $this->app->bind(
+            VideoRepositoryInterface::class,
+            EloquentVideoRepository::class
+        );
+
+        // Bulk - using PostgreSQL for performance
+        $this->app->bind(
+            VideoBulkRepositoryInterface::class,
+            PostgresVideoBulkRepository::class
+        );
+
+        // Soft Delete - using Eloquent
+        $this->app->bind(
+            VideoSoftDeleteRepositoryInterface::class,
+            EloquentVideoSoftDeleteRepository::class
+        );
+
+        // Bulk Soft Delete - using PostgreSQL
+        $this->app->bind(
+            VideoBulkSoftDeleteRepositoryInterface::class,
+            PostgresVideoBulkSoftDeleteRepository::class
+        );
+    }
+}
+```
+
+> **Tip:** The `make:api-repository` command outputs binding instructions after generation. Copy these directly into your service provider.
+
+#### When to Use Each Driver
+
+| Driver | Best For |
+|--------|----------|
+| **Eloquent** | Standard CRUD operations, when you need model events/observers, accessors/mutators |
+| **MySQL** | Raw SQL performance, bulk operations, when you don't need Eloquent features |
+| **PostgreSQL** | Same as MySQL, plus PostgreSQL-specific features (RETURNING, ILIKE, etc.) |
+
 ---
 
 ## 📏 Coding Standards
