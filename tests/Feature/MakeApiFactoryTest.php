@@ -16,14 +16,14 @@ test('creates factory file', function () {
 
     $content = $this->getGeneratedFileContent('factories', 'VideoFactory.php');
 
-    expect($content)->toContain('namespace Database\Factories')
+    expect($content)->toContain('namespace ' . ConfigHelper::namespace('factories'))
         ->and($content)->toContain('class VideoFactory')
         ->and($content)->toContain('extends Factory');
 });
 
 test('generates definition method', function () {
     $schema = json_encode([
-        ['name' => 'title', 'type' => 'string'],
+        ['field' => 'title', 'type' => 'string'],
     ]);
 
     Artisan::call('make:api-factory', [
@@ -39,9 +39,9 @@ test('generates definition method', function () {
 
 test('factory generates intelligent fake data', function () {
     $schema = json_encode([
-        ['name' => 'email', 'type' => 'string'],
-        ['name' => 'age', 'type' => 'integer'],
-        ['name' => 'is_active', 'type' => 'boolean'],
+        ['field' => 'email', 'type' => 'string'],
+        ['field' => 'age', 'type' => 'integer'],
+        ['field' => 'is_active', 'type' => 'boolean'],
     ]);
 
     Artisan::call('make:api-factory', [
@@ -58,9 +58,9 @@ test('factory generates intelligent fake data', function () {
 
 test('type appropriate fakers for string fields', function () {
     $schema = json_encode([
-        ['name' => 'title', 'type' => 'string'],
-        ['name' => 'description', 'type' => 'text'],
-        ['name' => 'url', 'type' => 'string'],
+        ['field' => 'title', 'type' => 'string'],
+        ['field' => 'description', 'type' => 'text'],
+        ['field' => 'url', 'type' => 'string'],
     ]);
 
     Artisan::call('make:api-factory', [
@@ -77,9 +77,9 @@ test('type appropriate fakers for string fields', function () {
 
 test('type appropriate fakers for numeric fields', function () {
     $schema = json_encode([
-        ['name' => 'count', 'type' => 'integer'],
-        ['name' => 'price', 'type' => 'decimal'],
-        ['name' => 'rating', 'type' => 'float'],
+        ['field' => 'count', 'type' => 'integer'],
+        ['field' => 'price', 'type' => 'decimal'],
+        ['field' => 'rating', 'type' => 'float'],
     ]);
 
     Artisan::call('make:api-factory', [
@@ -96,8 +96,8 @@ test('type appropriate fakers for numeric fields', function () {
 
 test('boolean fields default to fake boolean', function () {
     $schema = json_encode([
-        ['name' => 'is_published', 'type' => 'boolean'],
-        ['name' => 'is_active', 'type' => 'boolean'],
+        ['field' => 'is_published', 'type' => 'boolean'],
+        ['field' => 'is_active', 'type' => 'boolean'],
     ]);
 
     Artisan::call('make:api-factory', [
@@ -113,8 +113,8 @@ test('boolean fields default to fake boolean', function () {
 
 test('date fields use fake date', function () {
     $schema = json_encode([
-        ['name' => 'birth_date', 'type' => 'date'],
-        ['name' => 'published_at', 'type' => 'datetime'],
+        ['field' => 'birth_date', 'type' => 'date'],
+        ['field' => 'published_at', 'type' => 'datetime'],
     ]);
 
     Artisan::call('make:api-factory', [
@@ -129,8 +129,11 @@ test('date fields use fake date', function () {
 });
 
 test('foreign keys use model factory', function () {
+    // Create User model first (required for foreign key validation)
+    Artisan::call('make:api-model', ['name' => 'User']);
+
     $schema = json_encode([
-        ['name' => 'user_id', 'type' => 'unsignedBigInteger', 'isForeignKey' => true, 'foreignTable' => 'user'],
+        ['parentModel' => 'User'],
     ]);
 
     Artisan::call('make:api-factory', [
@@ -140,13 +143,13 @@ test('foreign keys use model factory', function () {
 
     $content = $this->getGeneratedFileContent('factories', 'VideoFactory.php');
 
-    expect($content)->toContain("'user_id' => \\App\\Models\\User::factory()");
+    expect($content)->toContain("'user_id' => \\" . ConfigHelper::namespace('models') . "\\User::factory()");
 });
 
 test('composite unique fields marked as unique', function () {
     $schema = json_encode([
-        ['name' => 'email', 'type' => 'string'],
-        ['name' => 'category_id', 'type' => 'unsignedBigInteger'],
+        ['field' => 'email', 'type' => 'string'],
+        ['field' => 'category_id', 'type' => 'unsignedBigInteger'],
     ]);
 
     Artisan::call('make:api-factory', [
@@ -162,8 +165,8 @@ test('composite unique fields marked as unique', function () {
 
 test('comments added warning about composite unique constraints', function () {
     $schema = json_encode([
-        ['name' => 'sku', 'type' => 'string'],
-        ['name' => 'warehouse_id', 'type' => 'unsignedBigInteger'],
+        ['field' => 'sku', 'type' => 'string'],
+        ['field' => 'warehouse_id', 'type' => 'unsignedBigInteger'],
     ]);
 
     Artisan::call('make:api-factory', [
@@ -181,9 +184,9 @@ test('comments added warning about composite unique constraints', function () {
 
 test('multiple composite unique constraints listed in comments', function () {
     $schema = json_encode([
-        ['name' => 'sku', 'type' => 'string'],
-        ['name' => 'barcode', 'type' => 'string'],
-        ['name' => 'warehouse_id', 'type' => 'unsignedBigInteger'],
+        ['field' => 'sku', 'type' => 'string'],
+        ['field' => 'barcode', 'type' => 'string'],
+        ['field' => 'warehouse_id', 'type' => 'unsignedBigInteger'],
     ]);
 
     Artisan::call('make:api-factory', [
@@ -200,11 +203,11 @@ test('multiple composite unique constraints listed in comments', function () {
 
 test('intelligent fakers for common field names', function () {
     $schema = json_encode([
-        ['name' => 'email', 'type' => 'string'],
-        ['name' => 'phone', 'type' => 'string'],
-        ['name' => 'address', 'type' => 'string'],
-        ['name' => 'city', 'type' => 'string'],
-        ['name' => 'country', 'type' => 'string'],
+        ['field' => 'email', 'type' => 'string'],
+        ['field' => 'phone', 'type' => 'string'],
+        ['field' => 'address', 'type' => 'string'],
+        ['field' => 'city', 'type' => 'string'],
+        ['field' => 'country', 'type' => 'string'],
     ]);
 
     Artisan::call('make:api-factory', [
@@ -223,8 +226,8 @@ test('intelligent fakers for common field names', function () {
 
 test('json fields get array structure', function () {
     $schema = json_encode([
-        ['name' => 'metadata', 'type' => 'json'],
-        ['name' => 'settings', 'type' => 'json'],
+        ['field' => 'metadata', 'type' => 'json'],
+        ['field' => 'settings', 'type' => 'json'],
     ]);
 
     Artisan::call('make:api-factory', [

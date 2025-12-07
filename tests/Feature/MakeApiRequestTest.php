@@ -16,15 +16,15 @@ test('creates request file with proper namespace', function () {
 
     $content = $this->getGeneratedFileContent('requests', 'VideoRequest.php');
 
-    expect($content)->toContain('namespace App\Http\Requests')
+    expect($content)->toContain('namespace ' . ConfigHelper::namespace('requests'))
         ->and($content)->toContain('class VideoRequest')
         ->and($content)->toContain('extends BaseFormRequest');
 });
 
 test('generates validation rules from schema', function () {
     $schema = json_encode([
-        ['name' => 'title', 'type' => 'string', 'required' => true],
-        ['name' => 'description', 'type' => 'text'],
+        ['field' => 'title', 'type' => 'string', 'required' => true],
+        ['field' => 'description', 'type' => 'text'],
     ]);
 
     Artisan::call('make:api-request', [
@@ -40,8 +40,8 @@ test('generates validation rules from schema', function () {
 
 test('required fields have required rule', function () {
     $schema = json_encode([
-        ['name' => 'title', 'type' => 'string', 'required' => true],
-        ['name' => 'price', 'type' => 'decimal', 'required' => true],
+        ['field' => 'title', 'type' => 'string', 'required' => true],
+        ['field' => 'price', 'type' => 'decimal', 'required' => true],
     ]);
 
     Artisan::call('make:api-request', [
@@ -57,8 +57,8 @@ test('required fields have required rule', function () {
 
 test('nullable fields have nullable rule', function () {
     $schema = json_encode([
-        ['name' => 'description', 'type' => 'text'],
-        ['name' => 'notes', 'type' => 'text', 'required' => false],
+        ['field' => 'description', 'type' => 'text'],
+        ['field' => 'notes', 'type' => 'text', 'required' => false],
     ]);
 
     Artisan::call('make:api-request', [
@@ -74,8 +74,8 @@ test('nullable fields have nullable rule', function () {
 
 test('patch put makes required fields sometimes instead of required', function () {
     $schema = json_encode([
-        ['name' => 'title', 'type' => 'string', 'required' => true],
-        ['name' => 'content', 'type' => 'text', 'required' => true],
+        ['field' => 'title', 'type' => 'string', 'required' => true],
+        ['field' => 'content', 'type' => 'text', 'required' => true],
     ]);
 
     Artisan::call('make:api-request', [
@@ -94,7 +94,7 @@ test('patch put makes required fields sometimes instead of required', function (
 
 test('email fields have email validation', function () {
     $schema = json_encode([
-        ['name' => 'email', 'type' => 'email', 'required' => true],
+        ['field' => 'email', 'type' => 'email', 'required' => true],
     ]);
 
     Artisan::call('make:api-request', [
@@ -109,7 +109,7 @@ test('email fields have email validation', function () {
 
 test('unique fields have unique validation', function () {
     $schema = json_encode([
-        ['name' => 'slug', 'type' => 'string', 'required' => true, 'unique' => true],
+        ['field' => 'slug', 'type' => 'string', 'required' => true, 'unique' => true],
     ]);
 
     Artisan::call('make:api-request', [
@@ -123,8 +123,11 @@ test('unique fields have unique validation', function () {
 });
 
 test('foreign keys have exists validation', function () {
+    // Create parent model first
+    Artisan::call('make:api-model', ['name' => 'User']);
+
     $schema = json_encode([
-        ['name' => 'user_id', 'type' => 'unsignedBigInteger', 'required' => true, 'isForeignKey' => true, 'foreignTable' => 'user'],
+        ['parentModel' => 'User', 'required' => true],
     ]);
 
     Artisan::call('make:api-request', [
@@ -139,13 +142,13 @@ test('foreign keys have exists validation', function () {
 
 test('generates type specific validation', function () {
     $schema = json_encode([
-        ['name' => 'title', 'type' => 'string'],
-        ['name' => 'count', 'type' => 'integer'],
-        ['name' => 'is_active', 'type' => 'boolean'],
-        ['name' => 'price', 'type' => 'decimal'],
-        ['name' => 'birth_date', 'type' => 'date'],
-        ['name' => 'published_at', 'type' => 'datetime'],
-        ['name' => 'metadata', 'type' => 'json'],
+        ['field' => 'title', 'type' => 'string'],
+        ['field' => 'count', 'type' => 'integer'],
+        ['field' => 'is_active', 'type' => 'boolean'],
+        ['field' => 'price', 'type' => 'decimal'],
+        ['field' => 'birth_date', 'type' => 'date'],
+        ['field' => 'published_at', 'type' => 'datetime'],
+        ['field' => 'metadata', 'type' => 'json'],
     ]);
 
     Artisan::call('make:api-request', [
@@ -166,8 +169,8 @@ test('generates type specific validation', function () {
 
 test('generates composite unique validation closure', function () {
     $schema = json_encode([
-        ['name' => 'email', 'type' => 'string', 'required' => true],
-        ['name' => 'category_id', 'type' => 'unsignedBigInteger', 'required' => true],
+        ['field' => 'email', 'type' => 'string', 'required' => true],
+        ['field' => 'category_id', 'type' => 'unsignedBigInteger', 'required' => true],
     ]);
 
     Artisan::call('make:api-request', [
@@ -187,9 +190,9 @@ test('generates composite unique validation closure', function () {
 
 test('composite unique validation handles multiple constraints', function () {
     $schema = json_encode([
-        ['name' => 'sku', 'type' => 'string', 'required' => true],
-        ['name' => 'barcode', 'type' => 'string', 'required' => true],
-        ['name' => 'warehouse_id', 'type' => 'unsignedBigInteger', 'required' => true],
+        ['field' => 'sku', 'type' => 'string', 'required' => true],
+        ['field' => 'barcode', 'type' => 'string', 'required' => true],
+        ['field' => 'warehouse_id', 'type' => 'unsignedBigInteger', 'required' => true],
     ]);
 
     Artisan::call('make:api-request', [
@@ -208,8 +211,8 @@ test('composite unique validation handles multiple constraints', function () {
 
 test('composite unique validation excludes current record on update', function () {
     $schema = json_encode([
-        ['name' => 'email', 'type' => 'string', 'required' => true],
-        ['name' => 'category_id', 'type' => 'unsignedBigInteger', 'required' => true],
+        ['field' => 'email', 'type' => 'string', 'required' => true],
+        ['field' => 'category_id', 'type' => 'unsignedBigInteger', 'required' => true],
     ]);
 
     Artisan::call('make:api-request', [

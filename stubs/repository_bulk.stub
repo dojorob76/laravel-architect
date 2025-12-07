@@ -1,0 +1,17 @@
+<?php
+
+namespace {{ namespace }};
+
+use {{ model_namespace }}\{{ class }};
+use {{ interface_namespace }}\{{ class }}BulkRepositoryInterface;
+use LaravelArchitect\Base\Traits\{{ trait }};
+{{ additional_imports }}
+
+/**
+ * {{ driver }} implementation of {{ class }} bulk repository operations.
+ */
+class {{ driver }}{{ class }}BulkRepository implements {{ class }}BulkRepositoryInterface
+{
+    use {{ trait }};
+{{ properties }}{{ constructor }}
+}

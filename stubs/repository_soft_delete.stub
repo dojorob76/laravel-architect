@@ -1,0 +1,17 @@
+<?php
+
+namespace {{ namespace }};
+
+use {{ model_namespace }}\{{ class }};
+use {{ interface_namespace }}\{{ class }}SoftDeleteRepositoryInterface;
+use LaravelArchitect\Base\Traits\{{ trait }};
+{{ additional_imports }}
+
+/**
+ * {{ driver }} implementation of {{ class }} soft delete repository operations.
+ */
+class {{ driver }}{{ class }}SoftDeleteRepository implements {{ class }}SoftDeleteRepositoryInterface
+{
+    use {{ trait }};
+{{ properties }}{{ constructor }}
+}

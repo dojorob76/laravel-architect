@@ -9,8 +9,12 @@ class MakeApiBundleCommand extends Command
     protected $signature = 'make:api-bundle {name}
                             {--schema=}
                             {--soft-deletes}
+                            {--no-bulk}
                             {--composite-unique=}
-                            {--driver=eloquent : Repository driver (eloquent|mysql|postgres|all)}';
+                            {--crud-driver= : CRUD repository driver (eloquent|mysql|postgres|all)}
+                            {--bulk-driver= : Bulk repository driver (eloquent|mysql|postgres|all)}
+                            {--soft-delete-driver= : SoftDelete repository driver (eloquent|mysql|postgres|all)}
+                            {--bulk-soft-delete-driver= : BulkSoftDelete repository driver (eloquent|mysql|postgres|all)}';
 
     protected $description = 'Scaffold a complete API resource bundle';
 
@@ -19,8 +23,12 @@ class MakeApiBundleCommand extends Command
         $name = $this->argument('name');
         $schema = $this->option('schema');
         $softDeletes = $this->option('soft-deletes');
+        $noBulk = $this->option('no-bulk');
         $compositeUnique = $this->option('composite-unique');
-        $driver = $this->option('driver');
+        $crudDriver = $this->option('crud-driver');
+        $bulkDriver = $this->option('bulk-driver');
+        $softDeleteDriver = $this->option('soft-delete-driver');
+        $bulkSoftDeleteDriver = $this->option('bulk-soft-delete-driver');
 
         // Args for migration (includes composite-unique)
         $migrationArgs = [
@@ -86,10 +94,32 @@ class MakeApiBundleCommand extends Command
         $this->call('make:api-factory', $schemaCompositeArgs);
 
         $this->info('🗄️  Creating repositories...');
-        $this->call('make:api-repository', array_merge($schemaCompositeArgs, ['--driver' => $driver]));
+        $repositoryArgs = [
+            'name' => $name,
+            '--soft-deletes' => $softDeletes,
+            '--no-bulk' => $noBulk,
+        ];
+        if ($crudDriver) {
+            $repositoryArgs['--crud-driver'] = $crudDriver;
+        }
+        if ($bulkDriver) {
+            $repositoryArgs['--bulk-driver'] = $bulkDriver;
+        }
+        if ($softDeleteDriver) {
+            $repositoryArgs['--soft-delete-driver'] = $softDeleteDriver;
+        }
+        if ($bulkSoftDeleteDriver) {
+            $repositoryArgs['--bulk-soft-delete-driver'] = $bulkSoftDeleteDriver;
+        }
+        $this->call('make:api-repository', $repositoryArgs);
 
         $this->info('⚙️  Creating service...');
-        $this->call('make:api-service', $nameOnlyArgs);
+        $serviceArgs = [
+            'name' => $name,
+            '--soft-deletes' => $softDeletes,
+            '--no-bulk' => $noBulk,
+        ];
+        $this->call('make:api-service', $serviceArgs);
 
         $this->info('✅ Creating form request...');
         $this->call('make:api-request', $schemaCompositeArgs);

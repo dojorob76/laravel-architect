@@ -62,36 +62,6 @@ describe('SoftDeleteMySQLRepository trait', function () {
         });
     });
 
-    describe('restoreMany', function () {
-        test('generates correct SQL with ? placeholders', function () {
-            DB::shouldReceive('update')
-                ->with('UPDATE test_table SET deleted_at = NULL WHERE id IN (?,?,?) AND deleted_at IS NOT NULL', [1, 2, 3])
-                ->once()
-                ->andReturn(3);
-
-            expect($this->repository->restoreMany([1, 2, 3]))->toBe(3);
-        });
-
-        test('returns zero for empty array', function () {
-            expect($this->repository->restoreMany([]))->toBe(0);
-        });
-    });
-
-    describe('forceDeleteMany', function () {
-        test('generates correct SQL with ? placeholders', function () {
-            DB::shouldReceive('delete')
-                ->with('DELETE FROM test_table WHERE id IN (?,?,?)', [1, 2, 3])
-                ->once()
-                ->andReturn(3);
-
-            expect($this->repository->forceDeleteMany([1, 2, 3]))->toBe(3);
-        });
-
-        test('returns zero for empty array', function () {
-            expect($this->repository->forceDeleteMany([]))->toBe(0);
-        });
-    });
-
     describe('findWithTrashed', function () {
         test('generates correct SQL without deleted_at filter', function () {
             $record = (object) ['id' => 1, 'name' => 'Test'];

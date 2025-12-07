@@ -26,9 +26,9 @@ test('creates basic model file', function () {
 
 test('creates model with schema and fillable fields', function () {
     $schema = json_encode([
-        ['name' => 'title', 'type' => 'string', 'required' => true],
-        ['name' => 'description', 'type' => 'text', 'nullable' => true],
-        ['name' => 'duration', 'type' => 'integer', 'required' => true],
+        ['field' => 'title', 'type' => 'string', 'required' => true],
+        ['field' => 'description', 'type' => 'text', 'nullable' => true],
+        ['field' => 'duration', 'type' => 'integer', 'required' => true],
     ]);
 
     Artisan::call('make:api-model', [
@@ -43,9 +43,12 @@ test('creates model with schema and fillable fields', function () {
 });
 
 test('creates model with foreign key relationship', function () {
+    // Create parent model first
+    Artisan::call('make:api-model', ['name' => 'User']);
+
     $schema = json_encode([
-        ['name' => 'title', 'type' => 'string'],
-        ['name' => 'user_id', 'type' => 'unsignedBigInteger', 'isForeignKey' => true, 'foreignTable' => 'user'],
+        ['field' => 'title', 'type' => 'string'],
+        ['parentModel' => 'User'],
     ]);
 
     Artisan::call('make:api-model', [
@@ -58,9 +61,12 @@ test('creates model with foreign key relationship', function () {
 });
 
 test('relationship method name is singular table name', function () {
+    // Create parent model first
+    Artisan::call('make:api-model', ['name' => 'User']);
+
     $schema = json_encode([
-        ['name' => 'title', 'type' => 'string'],
-        ['name' => 'user_id', 'type' => 'unsignedBigInteger', 'isForeignKey' => true, 'foreignTable' => 'user'],
+        ['field' => 'title', 'type' => 'string'],
+        ['parentModel' => 'User'],
     ]);
 
     Artisan::call('make:api-model', [
@@ -98,10 +104,10 @@ test('creates pivot model without timestamps', function () {
 
 test('creates model with proper casts', function () {
     $schema = json_encode([
-        ['name' => 'is_active', 'type' => 'boolean'],
-        ['name' => 'price', 'type' => 'decimal'],
-        ['name' => 'published_at', 'type' => 'datetime'],
-        ['name' => 'metadata', 'type' => 'json'],
+        ['field' => 'is_active', 'type' => 'boolean'],
+        ['field' => 'price', 'type' => 'decimal'],
+        ['field' => 'published_at', 'type' => 'datetime'],
+        ['field' => 'metadata', 'type' => 'json'],
     ]);
 
     Artisan::call('make:api-model', [

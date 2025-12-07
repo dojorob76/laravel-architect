@@ -1,0 +1,13 @@
+<?php
+
+namespace {{ namespace }};
+
+use {{ base_interface_import }};
+
+/**
+ * Interface for {{ class }} soft delete repository operations.
+ */
+interface {{ class }}SoftDeleteRepositoryInterface extends SoftDeleteRepositoryInterface
+{
+    //
+}

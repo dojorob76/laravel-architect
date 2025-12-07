@@ -214,7 +214,7 @@ describe('TypeMappingHelper', function () {
 
     describe('buildValidationRules', function () {
         test('builds required rules for required field', function () {
-            $field = ['name' => 'title', 'type' => 'string', 'required' => true];
+            $field = ['field' => 'title', 'type' => 'string', 'required' => true];
             $rules = TypeMappingHelper::buildValidationRules($field);
 
             expect($rules)->toContain('required');
@@ -223,7 +223,7 @@ describe('TypeMappingHelper', function () {
         });
 
         test('builds nullable rules for optional field', function () {
-            $field = ['name' => 'description', 'type' => 'text'];
+            $field = ['field' => 'description', 'type' => 'text'];
             $rules = TypeMappingHelper::buildValidationRules($field);
 
             expect($rules)->toContain('nullable');
@@ -232,14 +232,14 @@ describe('TypeMappingHelper', function () {
         });
 
         test('uses correct type rule', function () {
-            $field = ['name' => 'email', 'type' => 'email', 'required' => true];
+            $field = ['field' => 'email', 'type' => 'email', 'required' => true];
             $rules = TypeMappingHelper::buildValidationRules($field);
 
             expect($rules)->toContain('email');
         });
 
         test('defaults to string type when type is missing', function () {
-            $field = ['name' => 'field'];
+            $field = ['field' => 'field'];
             $rules = TypeMappingHelper::buildValidationRules($field);
 
             expect($rules)->toContain('string');
@@ -532,8 +532,8 @@ describe('TypeMappingHelper', function () {
     describe('buildTestData', function () {
         test('builds array of test values for fields', function () {
             $fields = [
-                ['name' => 'title', 'type' => 'string'],
-                ['name' => 'count', 'type' => 'integer'],
+                ['field' => 'title', 'type' => 'string'],
+                ['field' => 'count', 'type' => 'integer'],
             ];
 
             $data = TypeMappingHelper::buildTestData($fields);
@@ -546,7 +546,7 @@ describe('TypeMappingHelper', function () {
 
         test('builds update values when isUpdate is true', function () {
             $fields = [
-                ['name' => 'title', 'type' => 'string'],
+                ['field' => 'title', 'type' => 'string'],
             ];
 
             $data = TypeMappingHelper::buildTestData($fields, true);
@@ -558,9 +558,9 @@ describe('TypeMappingHelper', function () {
     describe('buildPartialTestData', function () {
         test('returns subset of fields', function () {
             $fields = [
-                ['name' => 'field1', 'type' => 'string'],
-                ['name' => 'field2', 'type' => 'string'],
-                ['name' => 'field3', 'type' => 'string'],
+                ['field' => 'field1', 'type' => 'string'],
+                ['field' => 'field2', 'type' => 'string'],
+                ['field' => 'field3', 'type' => 'string'],
             ];
 
             $data = TypeMappingHelper::buildPartialTestData($fields, 2);
@@ -573,12 +573,12 @@ describe('TypeMappingHelper', function () {
 
         test('uses callback when provided', function () {
             $fields = [
-                ['name' => 'field1', 'type' => 'string'],
-                ['name' => 'field2', 'type' => 'integer'],
+                ['field' => 'field1', 'type' => 'string'],
+                ['field' => 'field2', 'type' => 'integer'],
             ];
 
             $data = TypeMappingHelper::buildPartialTestData($fields, 2, function ($field, $isUpdate) {
-                if ($field['name'] === 'field1') {
+                if ($field['field'] === 'field1') {
                     return "'Custom Value'";
                 }
                 return null;
@@ -591,14 +591,25 @@ describe('TypeMappingHelper', function () {
 
     describe('buildTestData with callback', function () {
         test('uses callback for custom values', function () {
+            // This represents the normalized FK structure from SchemaParserTrait::buildForeignKeyField()
             $fields = [
-                ['name' => 'title', 'type' => 'string'],
-                ['name' => 'user_id', 'type' => 'unsignedBigInteger', 'isForeignKey' => true],
+                ['field' => 'title', 'type' => 'string'],
+                [
+                    'field' => 'user_id',
+                    'type' => 'unsignedBigInteger',
+                    'isForeignKey' => true,
+                    'foreignTable' => 'users',
+                    'foreignModel' => 'User',
+                    'required' => true,
+                    'onDelete' => 'cascade',
+                    'onUpdate' => 'cascade',
+                ],
             ];
 
             $data = TypeMappingHelper::buildTestData($fields, false, function ($field, $isUpdate) {
                 if ($field['isForeignKey'] ?? false) {
-                    return 'User::factory()->create()->id';
+                    $foreignModel = $field['foreignModel'];
+                    return "{$foreignModel}::factory()->create()->id";
                 }
                 return null;
             });
@@ -609,7 +620,7 @@ describe('TypeMappingHelper', function () {
 
         test('falls back to type when callback returns null', function () {
             $fields = [
-                ['name' => 'count', 'type' => 'integer'],
+                ['field' => 'count', 'type' => 'integer'],
             ];
 
             $data = TypeMappingHelper::buildTestData($fields, false, fn($f, $u) => null);
@@ -619,7 +630,7 @@ describe('TypeMappingHelper', function () {
 
         test('passes isUpdate flag to callback', function () {
             $fields = [
-                ['name' => 'title', 'type' => 'string'],
+                ['field' => 'title', 'type' => 'string'],
             ];
 
             $updateFlagReceived = null;
@@ -633,8 +644,18 @@ describe('TypeMappingHelper', function () {
         });
 
         test('callback receives complete field array', function () {
+            // This represents the normalized FK structure from SchemaParserTrait::buildForeignKeyField()
             $fields = [
-                ['name' => 'user_id', 'type' => 'unsignedBigInteger', 'isForeignKey' => true, 'foreignTable' => 'users'],
+                [
+                    'field' => 'user_id',
+                    'type' => 'unsignedBigInteger',
+                    'isForeignKey' => true,
+                    'foreignTable' => 'users',
+                    'foreignModel' => 'User',
+                    'required' => true,
+                    'onDelete' => 'cascade',
+                    'onUpdate' => 'cascade',
+                ],
             ];
 
             $receivedField = null;
@@ -644,11 +665,9 @@ describe('TypeMappingHelper', function () {
                 return 'test';
             });
 
-            expect($receivedField)->toHaveKey('name');
-            expect($receivedField)->toHaveKey('type');
-            expect($receivedField)->toHaveKey('isForeignKey');
-            expect($receivedField)->toHaveKey('foreignTable');
-            expect($receivedField['foreignTable'])->toBe('users');
+            expect($receivedField)->toHaveKey('field');
+            expect($receivedField)->toHaveKey('foreignModel');
+            expect($receivedField['foreignModel'])->toBe('User');
         });
     });
 });

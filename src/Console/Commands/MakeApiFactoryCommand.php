@@ -68,19 +68,20 @@ class MakeApiFactoryCommand extends Command
             }
 
             // Mark fields that are part of composite unique constraints
+            $fieldName = $this->getFieldName($col);
             $isPartOfComposite = false;
             foreach ($compositeUnique as $columns) {
-                if (in_array($col['name'], $columns)) {
+                if (in_array($fieldName, $columns)) {
                     $isPartOfComposite = true;
                     break;
                 }
             }
 
-            if ($isPartOfComposite && !($col['isForeignKey'] ?? false) && !str_ends_with($col['name'], '_id')) {
+            if ($isPartOfComposite && !$this->isForeignKey($col)) {
                 // Use unique() faker modifier for composite fields when possible
-                $definitions[] = "            '{$col['name']}' => fake()->unique()->" . trim($fakerMethod, 'fake()->');
+                $definitions[] = "            '{$fieldName}' => fake()->unique()->" . trim($fakerMethod, 'fake()->');
             } else {
-                $definitions[] = "            '{$col['name']}' => {$fakerMethod}";
+                $definitions[] = "            '{$fieldName}' => {$fakerMethod}";
             }
         }
 
@@ -106,11 +107,11 @@ class MakeApiFactoryCommand extends Command
         $type = $col['type'] ?? 'string';
 
         if ($this->isForeignKey($col)) {
-            $foreignModel = $this->getForeignModelName($col['name']);
+            $foreignModel = $col['foreignModel'];
             $modelNamespace = $this->getNamespace('models');
             return $this->buildFactoryCall($modelNamespace, $foreignModel);
         }
 
-        return TypeMappingHelper::getBestFakerMethod($type, $col['name']);
+        return TypeMappingHelper::getBestFakerMethod($type, $this->getFieldName($col));
     }
 }

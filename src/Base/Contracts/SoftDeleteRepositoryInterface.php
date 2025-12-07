@@ -23,22 +23,6 @@ interface SoftDeleteRepositoryInterface
     public function forceDelete(int $id): bool;
 
     /**
-     * Restore multiple soft-deleted records
-     *
-     * @param array<int> $ids
-     * @return int Number of records restored
-     */
-    public function restoreMany(array $ids): int;
-
-    /**
-     * Permanently delete multiple records
-     *
-     * @param array<int> $ids
-     * @return int Number of records deleted
-     */
-    public function forceDeleteMany(array $ids): int;
-
-    /**
      * Find a record including soft-deleted
      */
     public function findWithTrashed(int $id): ?object;

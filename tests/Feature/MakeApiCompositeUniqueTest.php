@@ -13,17 +13,17 @@ test('creates single composite unique constraint', function () {
     // First create the Category model and migration
     Artisan::call('make:api-model', [
         'name' => 'Category',
-        '--schema' => json_encode([['name' => 'name', 'type' => 'string']])
+        '--schema' => json_encode([['field' => 'name', 'type' => 'string']])
     ]);
 
     Artisan::call('make:api-migration', [
         'name' => 'Category',
-        '--schema' => json_encode([['name' => 'name', 'type' => 'string']])
+        '--schema' => json_encode([['field' => 'name', 'type' => 'string']])
     ]);
 
     $schema = json_encode([
-        ['name' => 'email', 'type' => 'string', 'required' => true],
-        ['name' => 'category_id', 'type' => 'unsignedBigInteger', 'required' => true],
+        ['field' => 'email', 'type' => 'string', 'required' => true],
+        ['parentModel' => 'Category', 'required' => true],
     ]);
 
     Artisan::call('make:api-migration', [
@@ -41,30 +41,30 @@ test('creates multiple composite unique constraints with suffixes', function () 
     // First create the Warehouse model and migration
     Artisan::call('make:api-model', [
         'name' => 'Warehouse',
-        '--schema' => json_encode([['name' => 'name', 'type' => 'string']])
+        '--schema' => json_encode([['field' => 'name', 'type' => 'string']])
     ]);
 
     Artisan::call('make:api-migration', [
         'name' => 'Warehouse',
-        '--schema' => json_encode([['name' => 'name', 'type' => 'string']])
+        '--schema' => json_encode([['field' => 'name', 'type' => 'string']])
     ]);
 
     // Create the Supplier model and migration
     Artisan::call('make:api-model', [
         'name' => 'Supplier',
-        '--schema' => json_encode([['name' => 'name', 'type' => 'string']])
+        '--schema' => json_encode([['field' => 'name', 'type' => 'string']])
     ]);
 
     Artisan::call('make:api-migration', [
         'name' => 'Supplier',
-        '--schema' => json_encode([['name' => 'name', 'type' => 'string']])
+        '--schema' => json_encode([['field' => 'name', 'type' => 'string']])
     ]);
 
     $schema = json_encode([
-        ['name' => 'sku', 'type' => 'string'],
-        ['name' => 'warehouse_id', 'type' => 'unsignedBigInteger'],
-        ['name' => 'barcode', 'type' => 'string'],
-        ['name' => 'supplier_id', 'type' => 'unsignedBigInteger'],
+        ['field' => 'sku', 'type' => 'string'],
+        ['parentModel' => 'Warehouse'],
+        ['field' => 'barcode', 'type' => 'string'],
+        ['parentModel' => 'Supplier'],
     ]);
 
     Artisan::call('make:api-migration', [
@@ -83,29 +83,29 @@ test('creates multi-composite unique for 3+ columns', function () {
     // First create the Product model and migration
     Artisan::call('make:api-model', [
         'name' => 'Product',
-        '--schema' => json_encode([['name' => 'name', 'type' => 'string']])
+        '--schema' => json_encode([['field' => 'name', 'type' => 'string']])
     ]);
 
     Artisan::call('make:api-migration', [
         'name' => 'Product',
-        '--schema' => json_encode([['name' => 'name', 'type' => 'string']])
+        '--schema' => json_encode([['field' => 'name', 'type' => 'string']])
     ]);
 
     // Create the Warehouse model and migration
     Artisan::call('make:api-model', [
         'name' => 'Warehouse',
-        '--schema' => json_encode([['name' => 'name', 'type' => 'string']])
+        '--schema' => json_encode([['field' => 'name', 'type' => 'string']])
     ]);
 
     Artisan::call('make:api-migration', [
         'name' => 'Warehouse',
-        '--schema' => json_encode([['name' => 'name', 'type' => 'string']])
+        '--schema' => json_encode([['field' => 'name', 'type' => 'string']])
     ]);
 
     $schema = json_encode([
-        ['name' => 'product_id', 'type' => 'unsignedBigInteger'],
-        ['name' => 'warehouse_id', 'type' => 'unsignedBigInteger'],
-        ['name' => 'batch_number', 'type' => 'string'],
+        ['parentModel' => 'Product'],
+        ['parentModel' => 'Warehouse'],
+        ['field' => 'batch_number', 'type' => 'string'],
     ]);
 
     Artisan::call('make:api-migration', [
@@ -123,22 +123,22 @@ test('pivot table automatically gets composite unique', function () {
     // First create the required models
     Artisan::call('make:api-model', [
         'name' => 'Post',
-        '--schema' => json_encode([['name' => 'title', 'type' => 'string']])
+        '--schema' => json_encode([['field' => 'title', 'type' => 'string']])
     ]);
 
     Artisan::call('make:api-migration', [
         'name' => 'Post',
-        '--schema' => json_encode([['name' => 'title', 'type' => 'string']])
+        '--schema' => json_encode([['field' => 'title', 'type' => 'string']])
     ]);
 
     Artisan::call('make:api-model', [
         'name' => 'Tag',
-        '--schema' => json_encode([['name' => 'name', 'type' => 'string']])
+        '--schema' => json_encode([['field' => 'name', 'type' => 'string']])
     ]);
 
     Artisan::call('make:api-migration', [
         'name' => 'Tag',
-        '--schema' => json_encode([['name' => 'name', 'type' => 'string']])
+        '--schema' => json_encode([['field' => 'name', 'type' => 'string']])
     ]);
 
     // Use new model-centric pivot syntax
@@ -156,10 +156,10 @@ test('pivot table automatically gets composite unique', function () {
 
 test('warns about multiple composite uniques', function () {
     $schema = json_encode([
-        ['name' => 'field1', 'type' => 'string'],
-        ['name' => 'field2', 'type' => 'string'],
-        ['name' => 'field3', 'type' => 'string'],
-        ['name' => 'field4', 'type' => 'string'],
+        ['field' => 'field1', 'type' => 'string'],
+        ['field' => 'field2', 'type' => 'string'],
+        ['field' => 'field3', 'type' => 'string'],
+        ['field' => 'field4', 'type' => 'string'],
     ]);
 
     $this->artisan('make:api-migration', [

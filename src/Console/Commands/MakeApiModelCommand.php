@@ -54,7 +54,7 @@ class MakeApiModelCommand extends Command
             return '';
         }
 
-        $fillable = array_map(fn($col) => "        '{$col['name']}'", $schema);
+        $fillable = array_map(fn($col) => "        '" . $this->getFieldName($col) . "'", $schema);
         return implode(",\n", $fillable);
     }
 
@@ -77,17 +77,21 @@ class MakeApiModelCommand extends Command
 
     protected function buildBelongsToRelationship(array $col, string $namespace): string
     {
-        $foreignKeyName = $col['name'];
-        $rel = $this->extractRelationshipInfo($foreignKeyName);
+        $foreignKeyName = $this->getFieldName($col);
+        $foreignModel = $col['foreignModel'];
+        $modelNamespace = $this->getNamespace('models');
+        $foreignModelFQN = $this->buildFQNClass($modelNamespace, $foreignModel);
+        $relationName = \Illuminate\Support\Str::camel(str_replace('_id', '', $foreignKeyName));
+        $tableName = str_replace('_id', '', $foreignKeyName);
 
         return <<<PHP
 
     /**
-     * Get the {$rel->tableName} that owns this record.
+     * Get the {$tableName} that owns this record.
      */
-    public function {$rel->relationName}()
+    public function {$relationName}()
     {
-        return \$this->belongsTo({$rel->modelFQN}, '{$foreignKeyName}');
+        return \$this->belongsTo({$foreignModelFQN}, '{$foreignKeyName}');
     }
 PHP;
     }
@@ -99,7 +103,7 @@ PHP;
         foreach ($schema as $col) {
             $cast = TypeMappingHelper::getCast($col['type'] ?? 'string');
             if ($cast) {
-                $casts[] = "        '{$col['name']}' => '{$cast}'";
+                $casts[] = "        '" . $this->getFieldName($col) . "' => '{$cast}'";
             }
         }
 

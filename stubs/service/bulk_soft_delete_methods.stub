@@ -1,0 +1,24 @@
+
+    /**
+     * Restore multiple soft-deleted records.
+     */
+    public function restoreMany(array $ids): int
+    {
+        return $this->bulkSoftDeleteRepository->restoreMany($ids);
+    }
+
+    /**
+     * Permanently delete multiple records.
+     */
+    public function forceDeleteMany(array $ids): int
+    {
+        return $this->bulkSoftDeleteRepository->forceDeleteMany($ids);
+    }
+
+    /**
+     * Find multiple records including soft-deleted.
+     */
+    public function findManyWithTrashed(array $ids): Collection
+    {
+        return $this->bulkSoftDeleteRepository->findManyWithTrashed($ids);
+    }

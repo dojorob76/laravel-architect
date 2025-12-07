@@ -35,9 +35,9 @@ test('migration has dropIfExists in down method', function () {
 
 test('migration creates proper columns from schema', function () {
     $schema = json_encode([
-        ['name' => 'title', 'type' => 'string', 'nullable' => false, 'required' => true],
-        ['name' => 'description', 'type' => 'text', 'nullable' => true],
-        ['name' => 'views', 'type' => 'integer', 'default' => 0, 'required' => true],
+        ['field' => 'title', 'type' => 'string', 'nullable' => false, 'required' => true],
+        ['field' => 'description', 'type' => 'text', 'nullable' => true],
+        ['field' => 'views', 'type' => 'integer', 'default' => 0, 'required' => true],
     ]);
 
     Artisan::call('make:api-migration', [
@@ -54,8 +54,8 @@ test('migration creates proper columns from schema', function () {
 
 test('makes fields nullable when required is not set', function () {
     $schema = json_encode([
-        ['name' => 'title', 'type' => 'string'],
-        ['name' => 'description', 'type' => 'text', 'required' => true],
+        ['field' => 'title', 'type' => 'string'],
+        ['field' => 'description', 'type' => 'text', 'required' => true],
     ]);
 
     Artisan::call('make:api-migration', [
@@ -73,11 +73,11 @@ test('makes fields nullable when required is not set', function () {
 test('migration creates foreign key constraints', function () {
     // First create the user model/migration
     Artisan::call('make:api-model', ['name' => 'User']);
-    Artisan::call('make:api-migration', ['name' => 'User', '--schema' => json_encode([['name' => 'name', 'type' => 'string']])]);
+    Artisan::call('make:api-migration', ['name' => 'User', '--schema' => json_encode([['field' => 'name', 'type' => 'string']])]);
 
     $schema = json_encode([
-        ['name' => 'title', 'type' => 'string'],
-        ['name' => 'user_id', 'type' => 'unsignedBigInteger', 'isForeignKey' => true, 'foreignTable' => 'user'],
+        ['field' => 'title', 'type' => 'string'],
+        ['parentModel' => 'User'],
     ]);
 
     Artisan::call('make:api-migration', [
@@ -115,10 +115,10 @@ test('migration adds soft deletes column when requested', function () {
 test('pivot migration has no timestamps and has composite primary key', function () {
     // Create required models first
     Artisan::call('make:api-model', ['name' => 'Post']);
-    Artisan::call('make:api-migration', ['name' => 'Post', '--schema' => json_encode([['name' => 'title', 'type' => 'string']])]);
+    Artisan::call('make:api-migration', ['name' => 'Post', '--schema' => json_encode([['field' => 'title', 'type' => 'string']])]);
 
     Artisan::call('make:api-model', ['name' => 'Tag']);
-    Artisan::call('make:api-migration', ['name' => 'Tag', '--schema' => json_encode([['name' => 'name', 'type' => 'string']])]);
+    Artisan::call('make:api-migration', ['name' => 'Tag', '--schema' => json_encode([['field' => 'name', 'type' => 'string']])]);
 
     // Use new model-centric pivot syntax
     Artisan::call('make:api-migration', [
@@ -138,17 +138,17 @@ test('creates composite unique constraint', function () {
     // First create the Category model and migration
     Artisan::call('make:api-model', [
         'name' => 'Category',
-        '--schema' => json_encode([['name' => 'name', 'type' => 'string']])
+        '--schema' => json_encode([['field' => 'name', 'type' => 'string']])
     ]);
 
     Artisan::call('make:api-migration', [
         'name' => 'Category',
-        '--schema' => json_encode([['name' => 'name', 'type' => 'string']])
+        '--schema' => json_encode([['field' => 'name', 'type' => 'string']])
     ]);
 
     $schema = json_encode([
-        ['name' => 'email', 'type' => 'string', 'required' => true],
-        ['name' => 'category_id', 'type' => 'unsignedBigInteger', 'required' => true],
+        ['field' => 'email', 'type' => 'string', 'required' => true],
+        ['field' => 'category_id', 'type' => 'unsignedBigInteger', 'required' => true],
     ]);
 
     Artisan::call('make:api-migration', [

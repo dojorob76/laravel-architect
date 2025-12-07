@@ -6,7 +6,7 @@ use Illuminate\Support\Facades\File;
 
 beforeEach(function () {
     // Ensure all configured directories exist
-    $pathKeys = ['models', 'repositories', 'repository_interfaces', 'services', 'controllers',
+    $pathKeys = ['models', 'repositories', 'contracts', 'services', 'controllers',
                  'requests', 'resources', 'migrations', 'factories', 'tests'];
 
     foreach ($pathKeys as $key) {
@@ -17,7 +17,7 @@ beforeEach(function () {
 
 test('scaffolds complete bundle', function () {
     $schema = json_encode([
-        ['name' => 'title', 'type' => 'string', 'required' => true],
+        ['field' => 'title', 'type' => 'string', 'required' => true],
     ]);
 
     Artisan::call('make:api-bundle', [
@@ -27,7 +27,7 @@ test('scaffolds complete bundle', function () {
 
     // Check all files were created using config
     $this->assertFileWasGenerated('models', 'Video.php');
-    $this->assertFileWasGenerated('repository_interfaces', 'VideoRepositoryInterface.php');
+    $this->assertFileWasGenerated('contracts', 'VideoRepositoryInterface.php');
     $this->assertFileWasGenerated('repositories', 'EloquentVideoRepository.php');
     $this->assertFileWasGenerated('services', 'VideoService.php');
     $this->assertFileWasGenerated('controllers', 'VideoController.php');

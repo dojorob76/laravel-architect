@@ -13,12 +13,12 @@ class MakeApiMigrationCommand extends Command
 {
     use SchemaParserTrait;
 
-    protected $signature = 'make:api-migration {name?} {--schema=} {--pivot=false} {--models=} {--update-models=true} {--soft-deletes} {--composite-unique=}';
+    protected $signature = 'make:api-migration {name?} {--schema=} {--pivot} {--models=} {--update-models=true} {--soft-deletes} {--composite-unique=}';
     protected $description = 'Create a new API migration';
 
     public function handle(Filesystem $files): void
     {
-        $isPivot = $this->option('pivot') === 'true';
+        $isPivot = $this->option('pivot');
 
         if ($isPivot) {
             $this->handlePivotTable($files);
@@ -31,26 +31,24 @@ class MakeApiMigrationCommand extends Command
     {
         $modelsOption = $this->option('models');
 
-        // Validation: --models required when --pivot=true
+        // Validation: --models required when --pivot
         if (!$modelsOption) {
-            $this->error("The --models option is required when --pivot=true");
-            $this->comment("Example: php artisan make:api-migration --pivot=true --models='Post,Tag'");
+            $this->error("The --models option is required when --pivot is used");
+            $this->comment("Example: php artisan make:api-migration --pivot --models='Post,Tag'");
             return;
         }
 
         $models = $this->parseModels($modelsOption);
 
-        // Validation: Exactly 2 models required
-        if (count($models) !== 2) {
-            $this->error("Exactly 2 models are required for pivot tables.");
-            $this->comment("Example: --models='Post,Tag'");
+        // Validation: At least 2 models required
+        if (count($models) < 2) {
+            $this->error("Pivot tables require at least 2 models.");
+            $this->comment("Example: --models='Post,Tag' or --models='User,Role,Team'");
             return;
         }
 
-        [$model1, $model2] = $models;
-
-        // Validate both models exist and are valid
-        foreach ([$model1, $model2] as $model) {
+        // Validate all models exist and are valid
+        foreach ($models as $model) {
             if (!$this->isValidModelName($model)) {
                 $this->error("Invalid model name: '{$model}'. Must be singular StudlyCase.");
                 return;
@@ -64,20 +62,27 @@ class MakeApiMigrationCommand extends Command
         }
 
         // Generate table name (alphabetical)
-        $tableName = $this->generatePivotTableName($model1, $model2);
+        $tableName = $this->generatePivotTableName($models);
 
-        // Generate schema (preserving user's model order for composite key)
-        $schema = $this->parseSchema(json_encode($this->generatePivotSchema($model1, $model2)));
+        // Generate FK schema for all models (preserving user's order for composite key)
+        $fkSchema = $this->generatePivotForeignKeys($models);
 
-        // Auto-generate composite unique constraint
-        $compositeUnique = [array_map(fn($col) => $col['name'], $schema)];
+        // Parse any additional fields from --schema
+        $additionalFields = $this->parseSchema($this->option('schema'));
 
-        if (!$this->validateForeignKeys($schema, true)) {
+        // Merge FK schema with additional fields
+        $fullSchema = array_merge($fkSchema, $additionalFields);
+
+        // Auto-generate composite unique constraint from FK columns (in passed order)
+        $fkColumns = array_map(fn($col) => $this->getFieldName($col), $fkSchema);
+        $compositeUnique = [$fkColumns];
+
+        if (!$this->validateForeignKeys($fullSchema, true)) {
             return;
         }
 
         // Build and write migration
-        $schemaStr = $this->buildSchemaString($schema, true, $compositeUnique, $tableName);
+        $schemaStr = $this->buildSchemaString($fullSchema, true, $compositeUnique, $tableName);
         $content = $this->processStub('migration', [
             'table' => $tableName,
             'schema' => $schemaStr,
@@ -97,7 +102,7 @@ class MakeApiMigrationCommand extends Command
             $this->newLine();
             $this->info("Updating models with belongsToMany relationships...");
 
-            $result = $this->updatePivotModels($model1, $model2, $tableName);
+            $result = $this->updatePivotModels($models, $tableName);
 
             foreach ($result['messages'] as $message) {
                 $this->comment("  ✓ {$message}");
@@ -109,9 +114,7 @@ class MakeApiMigrationCommand extends Command
         } else {
             $this->newLine();
             $this->comment("Skipped model updates (--update-models=false)");
-            $this->comment("Manually add relationships:");
-            $this->comment("  {$model1}::belongsToMany({$model2}::class, '{$tableName}')");
-            $this->comment("  {$model2}::belongsToMany({$model1}::class, '{$tableName}')");
+            $this->comment("Manually add relationships to all models using belongsToMany()");
         }
 
         $this->displayCompositeUniqueInfo($compositeUnique, $tableName);
@@ -141,7 +144,7 @@ class MakeApiMigrationCommand extends Command
         if ($isPivot && empty($compositeUnique)) {
             $foreignKeys = $this->extractForeignKeys($schema);
             if (count($foreignKeys) === 2) {
-                $compositeUnique = [array_map(fn($fk) => $fk['name'], $foreignKeys)];
+                $compositeUnique = [array_map(fn($fk) => $this->getFieldName($fk), $foreignKeys)];
             }
         }
 
@@ -172,9 +175,9 @@ class MakeApiMigrationCommand extends Command
     protected function validateForeignKeys(array $schema, bool $isPivot): bool
     {
         foreach ($schema as $col) {
-            $columnName = $col['name'];
-
             if ($this->isForeignKey($col)) {
+                $columnName = $this->getFieldName($col);
+
                 if (!str_ends_with($columnName, '_id')) {
                     $this->error("Foreign key column '{$columnName}' must end with '_id'");
                     $this->comment("Example: user_id, blog_post_id, tag_id");
@@ -193,29 +196,22 @@ class MakeApiMigrationCommand extends Command
                     $this->comment("  Change '{$columnName}' to '{existing_table}_id'");
                     return false;
                 }
-
-                $col['isForeignKey'] = true;
-
-                if (!isset($col['foreignTable'])) {
-                    $col['foreignTable'] = $entityName;
-                }
             }
         }
 
         if ($isPivot) {
             $foreignKeys = $this->extractForeignKeys($schema);
 
-            if (count($foreignKeys) !== 2) {
-                $this->error("Pivot tables must have exactly 2 foreign key columns.");
+            if (count($foreignKeys) < 2) {
+                $this->error("Pivot tables must have at least 2 foreign key columns.");
                 $this->comment("Example: post_id and tag_id");
                 return false;
             }
 
-            // Only validate table name if one was provided (old column-centric syntax)
-            // New model-centric syntax doesn't provide a name argument
+            // Only validate table name if one was provided
             $providedName = $this->argument('name');
             if ($providedName) {
-                $fkNames = array_map(fn($col) => $this->extractForeignEntityName($col['name']), $foreignKeys);
+                $fkNames = array_map(fn($col) => $this->extractForeignEntityName($this->getFieldName($col)), $foreignKeys);
                 sort($fkNames);
                 $expectedName = implode('_', $fkNames);
 
@@ -275,13 +271,13 @@ class MakeApiMigrationCommand extends Command
 
             if ($this->isForeignKey($col)) {
                 if (!isset($col['foreignTable'])) {
-                    $col['foreignTable'] = $this->extractForeignEntityName($col['name']);
+                    $col['foreignTable'] = $this->extractForeignEntityName($this->getFieldName($col));
                 }
 
                 $foreignKeys[] = $col;
 
                 if ($isPivot) {
-                    $primaryKeys[] = $col['name'];
+                    $primaryKeys[] = $this->getFieldName($col);
                 }
             }
         }
@@ -370,7 +366,7 @@ class MakeApiMigrationCommand extends Command
     protected function buildColumnDefinition(array $col): string
     {
         $type = $col['type'] ?? 'string';
-        $name = $col['name'];
+        $name = $this->getFieldName($col);
 
         $line = "            \$table->{$type}('{$name}')";
 
@@ -394,7 +390,7 @@ class MakeApiMigrationCommand extends Command
 
     protected function buildForeignKeyConstraint(array $col): string
     {
-        $columnName = $col['name'];
+        $columnName = $this->getFieldName($col);
         $foreignTable = $this->getTableName($col['foreignTable'] ?? '');
         $foreignColumn = 'id';
 

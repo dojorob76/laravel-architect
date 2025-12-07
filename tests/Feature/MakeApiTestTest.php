@@ -22,7 +22,7 @@ test('creates pest test file', function () {
 
 test('generates crud tests', function () {
     $schema = json_encode([
-        ['name' => 'title', 'type' => 'string', 'required' => true],
+        ['field' => 'title', 'type' => 'string', 'required' => true],
     ]);
 
     Artisan::call('make:api-test', [
@@ -41,7 +41,7 @@ test('generates crud tests', function () {
 
 test('includes tests for index listing', function () {
     $schema = json_encode([
-        ['name' => 'title', 'type' => 'string', 'required' => true],
+        ['field' => 'title', 'type' => 'string', 'required' => true],
     ]);
 
     Artisan::call('make:api-test', [
@@ -58,7 +58,7 @@ test('includes tests for index listing', function () {
 
 test('includes tests for store create', function () {
     $schema = json_encode([
-        ['name' => 'title', 'type' => 'string', 'required' => true],
+        ['field' => 'title', 'type' => 'string', 'required' => true],
     ]);
 
     Artisan::call('make:api-test', [
@@ -75,7 +75,7 @@ test('includes tests for store create', function () {
 
 test('includes tests for show read', function () {
     $schema = json_encode([
-        ['name' => 'name', 'type' => 'string', 'required' => true],
+        ['field' => 'name', 'type' => 'string', 'required' => true],
     ]);
 
     Artisan::call('make:api-test', [
@@ -91,7 +91,7 @@ test('includes tests for show read', function () {
 
 test('includes tests for update patch', function () {
     $schema = json_encode([
-        ['name' => 'title', 'type' => 'string', 'required' => true],
+        ['field' => 'title', 'type' => 'string', 'required' => true],
     ]);
 
     Artisan::call('make:api-test', [
@@ -107,7 +107,7 @@ test('includes tests for update patch', function () {
 
 test('includes tests for destroy delete', function () {
     $schema = json_encode([
-        ['name' => 'name', 'type' => 'string', 'required' => true],
+        ['field' => 'name', 'type' => 'string', 'required' => true],
     ]);
 
     Artisan::call('make:api-test', [
@@ -123,7 +123,7 @@ test('includes tests for destroy delete', function () {
 
 test('includes batch operation tests', function () {
     $schema = json_encode([
-        ['name' => 'title', 'type' => 'string', 'required' => true],
+        ['field' => 'title', 'type' => 'string', 'required' => true],
     ]);
 
     Artisan::call('make:api-test', [
@@ -141,7 +141,7 @@ test('includes batch operation tests', function () {
 
 test('includes soft delete tests when flag provided', function () {
     $schema = json_encode([
-        ['name' => 'title', 'type' => 'string', 'required' => true],
+        ['field' => 'title', 'type' => 'string', 'required' => true],
     ]);
 
     Artisan::call('make:api-test', [
@@ -159,7 +159,7 @@ test('includes soft delete tests when flag provided', function () {
 
 test('includes batch soft delete tests when flag provided', function () {
     $schema = json_encode([
-        ['name' => 'title', 'type' => 'string', 'required' => true],
+        ['field' => 'title', 'type' => 'string', 'required' => true],
     ]);
 
     Artisan::call('make:api-test', [
@@ -176,9 +176,9 @@ test('includes batch soft delete tests when flag provided', function () {
 
 test('test data generated from schema', function () {
     $schema = json_encode([
-        ['name' => 'title', 'type' => 'string', 'required' => true],
-        ['name' => 'price', 'type' => 'decimal', 'required' => true],
-        ['name' => 'is_active', 'type' => 'boolean', 'required' => false],
+        ['field' => 'title', 'type' => 'string', 'required' => true],
+        ['field' => 'price', 'type' => 'decimal', 'required' => true],
+        ['field' => 'is_active', 'type' => 'boolean', 'required' => false],
     ]);
 
     Artisan::call('make:api-test', [
@@ -195,8 +195,8 @@ test('test data generated from schema', function () {
 
 test('validation error tests for required fields', function () {
     $schema = json_encode([
-        ['name' => 'title', 'type' => 'string', 'required' => true],
-        ['name' => 'content', 'type' => 'text', 'required' => true],
+        ['field' => 'title', 'type' => 'string', 'required' => true],
+        ['field' => 'content', 'type' => 'text', 'required' => true],
     ]);
 
     Artisan::call('make:api-test', [
@@ -212,7 +212,7 @@ test('validation error tests for required fields', function () {
 
 test('returns 404 tests for non existent resources', function () {
     $schema = json_encode([
-        ['name' => 'name', 'type' => 'string', 'required' => true],
+        ['field' => 'name', 'type' => 'string', 'required' => true],
     ]);
 
     Artisan::call('make:api-test', [
@@ -228,8 +228,8 @@ test('returns 404 tests for non existent resources', function () {
 
 test('partial update tests for patch method', function () {
     $schema = json_encode([
-        ['name' => 'title', 'type' => 'string', 'required' => true],
-        ['name' => 'description', 'type' => 'text', 'required' => true],
+        ['field' => 'title', 'type' => 'string', 'required' => true],
+        ['field' => 'description', 'type' => 'text', 'required' => true],
     ]);
 
     Artisan::call('make:api-test', [
@@ -244,7 +244,7 @@ test('partial update tests for patch method', function () {
 
 test('uses correct route names', function () {
     $schema = json_encode([
-        ['name' => 'title', 'type' => 'string', 'required' => true],
+        ['field' => 'title', 'type' => 'string', 'required' => true],
     ]);
 
     Artisan::call('make:api-test', [
