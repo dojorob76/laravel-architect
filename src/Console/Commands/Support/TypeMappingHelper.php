@@ -375,7 +375,13 @@ class TypeMappingHelper
     {
         $data = [];
         foreach ($fields as $field) {
-            $name = $field['name'];
+            // Expects normalized schema with 'field' key
+            $name = $field['field'] ?? null;
+
+            // Skip fields that don't have a field name (e.g., parentModel before normalization)
+            if ($name === null) {
+                continue;
+            }
 
             // Try custom value function first
             if ($customValueFn !== null) {

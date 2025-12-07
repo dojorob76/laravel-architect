@@ -35,9 +35,9 @@ test('creates collection file', function () {
 
 test('resource includes all schema fields', function () {
     $schema = json_encode([
-        ['name' => 'title', 'type' => 'string'],
-        ['name' => 'description', 'type' => 'text'],
-        ['name' => 'duration', 'type' => 'integer'],
+        ['field' => 'title', 'type' => 'string'],
+        ['field' => 'description', 'type' => 'text'],
+        ['field' => 'duration', 'type' => 'integer'],
     ]);
 
     Artisan::call('make:api-resource', [
@@ -53,9 +53,12 @@ test('resource includes all schema fields', function () {
 });
 
 test('resource uses whenLoaded for foreign key relationships', function () {
+    // Create parent model first
+    Artisan::call('make:api-model', ['name' => 'User']);
+
     $schema = json_encode([
-        ['name' => 'title', 'type' => 'string'],
-        ['name' => 'user_id', 'type' => 'unsignedBigInteger', 'isForeignKey' => true, 'foreignTable' => 'user'],
+        ['field' => 'title', 'type' => 'string'],
+        ['parentModel' => 'User'],
     ]);
 
     Artisan::call('make:api-resource', [
@@ -70,10 +73,14 @@ test('resource uses whenLoaded for foreign key relationships', function () {
 });
 
 test('foreign keys generate nested resource with whenLoaded', function () {
+    // Create parent models first
+    Artisan::call('make:api-model', ['name' => 'Post']);
+    Artisan::call('make:api-model', ['name' => 'User']);
+
     $schema = json_encode([
-        ['name' => 'content', 'type' => 'text'],
-        ['name' => 'post_id', 'type' => 'unsignedBigInteger', 'isForeignKey' => true, 'foreignTable' => 'post'],
-        ['name' => 'user_id', 'type' => 'unsignedBigInteger', 'isForeignKey' => true, 'foreignTable' => 'user'],
+        ['field' => 'content', 'type' => 'text'],
+        ['parentModel' => 'Post'],
+        ['parentModel' => 'User'],
     ]);
 
     Artisan::call('make:api-resource', [
@@ -101,7 +108,7 @@ test('collection includes pagination meta', function () {
 
 test('timestamps are included in resource', function () {
     $schema = json_encode([
-        ['name' => 'title', 'type' => 'string'],
+        ['field' => 'title', 'type' => 'string'],
     ]);
 
     Artisan::call('make:api-resource', [
@@ -117,9 +124,12 @@ test('timestamps are included in resource', function () {
 });
 
 test('resource does not include foreign key id fields directly', function () {
+    // Create parent model first
+    Artisan::call('make:api-model', ['name' => 'User']);
+
     $schema = json_encode([
-        ['name' => 'title', 'type' => 'string'],
-        ['name' => 'user_id', 'type' => 'unsignedBigInteger', 'isForeignKey' => true, 'foreignTable' => 'user'],
+        ['field' => 'title', 'type' => 'string'],
+        ['parentModel' => 'User'],
     ]);
 
     Artisan::call('make:api-resource', [
@@ -135,11 +145,16 @@ test('resource does not include foreign key id fields directly', function () {
 });
 
 test('resource handles multiple relationships', function () {
+    // Create parent models first
+    Artisan::call('make:api-model', ['name' => 'Category']);
+    Artisan::call('make:api-model', ['name' => 'Brand']);
+    Artisan::call('make:api-model', ['name' => 'Supplier']);
+
     $schema = json_encode([
-        ['name' => 'name', 'type' => 'string'],
-        ['name' => 'category_id', 'type' => 'unsignedBigInteger', 'isForeignKey' => true, 'foreignTable' => 'category'],
-        ['name' => 'brand_id', 'type' => 'unsignedBigInteger', 'isForeignKey' => true, 'foreignTable' => 'brand'],
-        ['name' => 'supplier_id', 'type' => 'unsignedBigInteger', 'isForeignKey' => true, 'foreignTable' => 'supplier'],
+        ['field' => 'name', 'type' => 'string'],
+        ['parentModel' => 'Category'],
+        ['parentModel' => 'Brand'],
+        ['parentModel' => 'Supplier'],
     ]);
 
     Artisan::call('make:api-resource', [

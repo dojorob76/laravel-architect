@@ -17,7 +17,7 @@ beforeEach(function () {
 
 test('scaffolds complete bundle', function () {
     $schema = json_encode([
-        ['name' => 'title', 'type' => 'string', 'required' => true],
+        ['field' => 'title', 'type' => 'string', 'required' => true],
     ]);
 
     Artisan::call('make:api-bundle', [

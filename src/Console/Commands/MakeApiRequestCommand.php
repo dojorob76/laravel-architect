@@ -47,7 +47,7 @@ class MakeApiRequestCommand extends Command
         $patchAdjustments = [];
 
         foreach ($schema as $col) {
-            $fieldName = $col['name'];
+            $fieldName = $this->getFieldName($col);
             $validationRules = $this->determineValidationRules($col);
 
             $rules[] = "            '{$fieldName}' => [" . implode(', ', array_map(fn($r) => "'{$r}'", $validationRules)) . "]";
@@ -92,15 +92,12 @@ class MakeApiRequestCommand extends Command
         // Add unique validation if specified
         if ($col['unique'] ?? false) {
             $tableName = $this->getTableName($col['table'] ?? 'table');
-            $rules[] = 'unique:' . $tableName . ',' . $col['name'];
+            $rules[] = 'unique:' . $tableName . ',' . $this->getFieldName($col);
         }
 
         // Add foreign key exists validation
         if ($this->isForeignKey($col)) {
-            $foreignTable = isset($col['foreignTable'])
-                ? $this->getTableName($col['foreignTable'])
-                : $this->getTableName($this->getForeignModelName($col['name']));
-
+            $foreignTable = $this->getTableName($col['foreignTable']);
             $rules[] = "exists:{$foreignTable},id";
         }
 

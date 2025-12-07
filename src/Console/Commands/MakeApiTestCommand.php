@@ -77,7 +77,7 @@ class MakeApiTestCommand extends Command
         // Use helper with custom callback for foreign keys
         $testData = TypeMappingHelper::buildTestData($schema, false, function ($col, $isUpdate) {
             if ($this->isForeignKey($col)) {
-                $foreignModel = $this->getForeignModelName($col['name']);
+                $foreignModel = $col['foreignModel'];
                 return "{$foreignModel}::factory()->create()->id";
             }
             return null; // Use default type-based value
@@ -129,7 +129,7 @@ class MakeApiTestCommand extends Command
             if ($this->isRequired($col)) {
                 $type = $col['type'] ?? 'string';
                 $invalidValue = TypeMappingHelper::getInvalidTestValue($type);
-                $data[] = "        '{$col['name']}' => {$invalidValue}";
+                $data[] = "        '" . $this->getFieldName($col) . "' => {$invalidValue}";
                 break;
             }
         }
@@ -162,7 +162,7 @@ class MakeApiTestCommand extends Command
         // Use helper with custom callback for foreign keys
         $testData = TypeMappingHelper::buildTestData($schema, false, function ($col, $isUpdate) {
             if ($this->isForeignKey($col)) {
-                $foreignModel = $this->getForeignModelName($col['name']);
+                $foreignModel = $col['foreignModel'];
                 return "{$foreignModel}::factory()->create()->id";
             }
             return null; // Use default type-based value
@@ -206,7 +206,7 @@ class MakeApiTestCommand extends Command
         $required = [];
         foreach ($schema as $col) {
             if ($this->isRequired($col)) {
-                $required[] = "            '{$col['name']}'";
+                $required[] = "            '" . $this->getFieldName($col) . "'";
             }
         }
 
@@ -217,7 +217,7 @@ class MakeApiTestCommand extends Command
     {
         foreach ($schema as $col) {
             if (in_array($col['type'] ?? '', ['string', 'text'])) {
-                return "'{$col['name']}'";
+                return "'" . $this->getFieldName($col) . "'";
             }
         }
 
@@ -308,7 +308,7 @@ PHP;
     {
         // Handle foreign keys
         if ($this->isForeignKey($col)) {
-            $foreignModel = $this->getForeignModelName($col['name']);
+            $foreignModel = $col['foreignModel'];
             return "{$foreignModel}::factory()->create()->id";
         }
 

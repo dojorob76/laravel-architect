@@ -101,15 +101,14 @@ trait SchemaParserTrait
     /**
      * Check if a schema column represents a foreign key.
      *
-     * Detects foreign keys by checking the 'isForeignKey' flag
-     * or if the column name ends with '_id'.
+     * After schema normalization, this only checks the 'isForeignKey' flag.
      *
      * @param array $col The column definition from schema
      * @return bool True if the column is a foreign key
      */
     protected function isForeignKey(array $col): bool
     {
-        return ($col['isForeignKey'] ?? false) || str_ends_with($col['name'], '_id');
+        return $col['isForeignKey'] ?? false;
     }
 
     /**
@@ -161,6 +160,19 @@ trait SchemaParserTrait
     protected function isRequired(array $col): bool
     {
         return $col['required'] ?? false;
+    }
+
+    /**
+     * Get the field/column name from a schema column definition.
+     *
+     * Single access point for retrieving field names from normalized schema.
+     *
+     * @param array $col The column definition from schema
+     * @return string The field/column name
+     */
+    protected function getFieldName(array $col): string
+    {
+        return $col['field'];
     }
 
     /**
@@ -386,45 +398,25 @@ trait SchemaParserTrait
     }
 
     /**
-     * Normalize schema from model-centric to column-centric format.
+     * Normalize schema to internal format with all derived properties.
      *
-     * Converts: {"parentModel": "User", "required": true}
-     * To: {"name": "user_id", "type": "unsignedBigInteger", "isForeignKey": true, ...}
+     * Single entry point for all schema processing. Transforms input schema
+     * (with 'field' for regular columns and 'parentModel' for FKs) into
+     * normalized format with all properties derived.
      *
      * @param array $schema The raw schema array
      * @return array The normalized schema array
-     * @throws \InvalidArgumentException If model name is invalid
+     * @throws \InvalidArgumentException If model name is invalid or model doesn't exist
      */
     protected function normalizeSchema(array $schema): array
     {
         $normalized = [];
 
-        foreach ($schema as $field) {
-            if (isset($field['parentModel'])) {
-                // Model-centric format - normalize to column-centric
-                $modelName = $field['parentModel'];
-
-                if (!$this->isValidModelName($modelName)) {
-                    throw new \InvalidArgumentException(
-                        "Invalid model name: '{$modelName}'. " .
-                        "Models must be singular StudlyCase (e.g., User, BlogPost, Tag)."
-                    );
-                }
-
-                $required = $field['required'] ?? true;
-
-                $normalized[] = [
-                    'name' => $this->modelToForeignKeyColumn($modelName),
-                    'type' => 'unsignedBigInteger',
-                    'isForeignKey' => true,
-                    'foreignTable' => $this->getTableName($modelName),
-                    'required' => $required,
-                    'onDelete' => $field['onDelete'] ?? ($required ? 'cascade' : 'set null'),
-                    'onUpdate' => 'cascade', // ALWAYS cascade
-                ];
+        foreach ($schema as $item) {
+            if (isset($item['parentModel'])) {
+                $normalized[] = $this->buildForeignKeyField($item);
             } else {
-                // Regular data field or old column-centric format (pass through)
-                $normalized[] = $field;
+                $normalized[] = $this->normalizeDataField($item);
             }
         }
 
@@ -432,15 +424,90 @@ trait SchemaParserTrait
     }
 
     /**
-     * Generate pivot table name from two model names (alphabetically sorted).
+     * Build a complete foreign key field definition from parentModel.
      *
-     * @param string $model1 First model name
-     * @param string $model2 Second model name
-     * @return string The pivot table name (e.g., 'post_tag')
+     * Derives all FK properties (column name, type, foreign table, etc.)
+     * from the parent model name alone.
+     *
+     * @param array $field Field definition with 'parentModel' key
+     * @return array Complete FK field definition
+     * @throws \InvalidArgumentException If model name is invalid or model doesn't exist
      */
-    protected function generatePivotTableName(string $model1, string $model2): string
+    protected function buildForeignKeyField(array $field): array
     {
-        return NamingConventionHelper::generatePivotTableName($model1, $model2);
+        $modelName = $field['parentModel'];
+
+        if (!$this->isValidModelName($modelName)) {
+            throw new \InvalidArgumentException(
+                "Invalid model name: '{$modelName}'. " .
+                "Models must be singular StudlyCase (e.g., User, BlogPost, Tag)."
+            );
+        }
+
+        if (!$this->modelExists($modelName)) {
+            throw new \InvalidArgumentException(
+                "Model '{$modelName}' does not exist at " . $this->getModelPath($modelName)
+            );
+        }
+
+        $required = $field['required'] ?? true;
+
+        return [
+            'field' => $this->modelToForeignKeyColumn($modelName),
+            'type' => 'unsignedBigInteger',
+            'isForeignKey' => true,
+            'foreignTable' => $this->getTableName($modelName),
+            'foreignModel' => $modelName,
+            'required' => $required,
+            'onDelete' => $field['onDelete'] ?? ($required ? 'cascade' : 'set null'),
+            'onUpdate' => 'cascade',
+        ];
+    }
+
+    /**
+     * Normalize a regular data field definition.
+     *
+     * Ensures all expected properties exist with sensible defaults.
+     *
+     * @param array $field Field definition with 'field' and 'type' keys
+     * @return array Normalized field definition
+     */
+    protected function normalizeDataField(array $field): array
+    {
+        return [
+            'field' => $field['field'],
+            'type' => $field['type'] ?? 'string',
+            'required' => $field['required'] ?? false,
+            'unique' => $field['unique'] ?? false,
+            'default' => $field['default'] ?? null,
+        ];
+    }
+
+    /**
+     * Generate pivot table name from 2+ model names (alphabetically sorted).
+     *
+     * @param array|string $models Array of model names, or first model name
+     * @param string|null $model2 Second model name (for backwards compatibility)
+     * @return string The pivot table name (e.g., 'post_tag', 'role_team_user')
+     */
+    protected function generatePivotTableName($models, ?string $model2 = null): string
+    {
+        // Handle backwards compatibility: generatePivotTableName($model1, $model2)
+        if (is_string($models) && $model2 !== null) {
+            $models = [$models, $model2];
+        }
+
+        // Convert to array if single model somehow passed
+        if (is_string($models)) {
+            $models = [$models];
+        }
+
+        $snakeNames = array_map(
+            fn($m) => NamingConventionHelper::modelToSingularSnake($m),
+            $models
+        );
+        sort($snakeNames);
+        return implode('_', $snakeNames);
     }
 
     /**
@@ -473,6 +540,23 @@ trait SchemaParserTrait
             ['parentModel' => $model1, 'required' => true],
             ['parentModel' => $model2, 'required' => true],
         ];
+    }
+
+    /**
+     * Generate foreign key field definitions for pivot table from model names.
+     *
+     * Converts an array of model names into normalized FK field definitions,
+     * preserving the user's order for composite key ordering.
+     *
+     * @param array $models Array of model names
+     * @return array Array of normalized FK field definitions
+     */
+    protected function generatePivotForeignKeys(array $models): array
+    {
+        return array_map(fn($model) => $this->buildForeignKeyField([
+            'parentModel' => $model,
+            'required' => true,
+        ]), $models);
     }
 
     /**
@@ -530,35 +614,34 @@ PHP;
     }
 
     /**
-     * Add belongsToMany relationships to both models in a pivot table.
+     * Add belongsToMany relationships to all models in a pivot table.
      *
-     * @param string $model1 First model name
-     * @param string $model2 Second model name
+     * For each model, creates relationships to all other models in the pivot.
+     *
+     * @param array $models Array of model names
      * @param string $pivotTable The pivot table name
      * @return array Results with success status and messages
      */
-    protected function updatePivotModels(
-        string $model1,
-        string $model2,
-        string $pivotTable
-    ): array {
+    protected function updatePivotModels(array $models, string $pivotTable): array
+    {
         $results = [
             'success' => true,
             'messages' => [],
         ];
 
-        if ($this->addBelongsToManyRelationship($model1, $model2, $pivotTable)) {
-            $results['messages'][] = "Added " . Str::plural(Str::camel($model2)) . "() to {$model1}";
-        } else {
-            $results['success'] = false;
-            $results['messages'][] = "Failed to update {$model1} model";
-        }
+        foreach ($models as $model) {
+            $otherModels = array_filter($models, fn($m) => $m !== $model);
 
-        if ($this->addBelongsToManyRelationship($model2, $model1, $pivotTable)) {
-            $results['messages'][] = "Added " . Str::plural(Str::camel($model1)) . "() to {$model2}";
-        } else {
-            $results['success'] = false;
-            $results['messages'][] = "Failed to update {$model2} model";
+            foreach ($otherModels as $relatedModel) {
+                $relationMethod = NamingConventionHelper::modelToBelongsToManyMethod($relatedModel);
+
+                if ($this->addBelongsToManyRelationship($model, $relatedModel, $pivotTable)) {
+                    $results['messages'][] = "Added {$relationMethod}() to {$model}";
+                } else {
+                    $results['success'] = false;
+                    $results['messages'][] = "Failed to update {$model} model";
+                }
+            }
         }
 
         return $results;
