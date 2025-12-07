@@ -12,14 +12,12 @@ class MakeApiRepositoryCommand extends Command
     use SchemaParserTrait;
 
     protected $signature = 'make:api-repository {name}
-        {--schema=}
         {--soft-deletes}
         {--no-bulk}
         {--crud-driver=}
         {--bulk-driver=}
         {--soft-delete-driver=}
-        {--bulk-soft-delete-driver=}
-        {--composite-unique=}';
+        {--bulk-soft-delete-driver=}';
     protected $description = 'Create repository interface and implementations (eloquent|mysql|postgres|all)';
 
     /**
@@ -109,7 +107,6 @@ class MakeApiRepositoryCommand extends Command
         $name = $this->argument('name');
         $softDeletes = $this->option('soft-deletes');
         $noBulk = $this->option('no-bulk');
-        $compositeUnique = $this->parseCompositeUnique($this->option('composite-unique'));
         $className = Str::studly($name);
         $tableName = $this->getTableName($name);
 

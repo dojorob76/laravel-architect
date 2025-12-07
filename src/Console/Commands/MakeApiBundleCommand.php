@@ -94,10 +94,11 @@ class MakeApiBundleCommand extends Command
         $this->call('make:api-factory', $schemaCompositeArgs);
 
         $this->info('🗄️  Creating repositories...');
-        $repositoryArgs = array_merge($schemaCompositeArgs, [
+        $repositoryArgs = [
+            'name' => $name,
             '--soft-deletes' => $softDeletes,
             '--no-bulk' => $noBulk,
-        ]);
+        ];
         if ($crudDriver) {
             $repositoryArgs['--crud-driver'] = $crudDriver;
         }
