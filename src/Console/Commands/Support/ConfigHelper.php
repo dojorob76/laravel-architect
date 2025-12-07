@@ -45,7 +45,7 @@ class ConfigHelper
     /**
      * Get a specific namespace by key.
      */
-    public static function namespace(string $key): string
+    public static function namespace(string $key): ?string
     {
         return config("api_scaffolding.namespaces.{$key}");
     }

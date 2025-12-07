@@ -48,13 +48,54 @@ test('service has batch operation methods', function () {
         ->and($content)->toContain('public function deleteMany');
 });
 
-test('service has soft delete methods', function () {
-    Artisan::call('make:api-service', ['name' => 'Video']);
+test('service has soft delete methods when --soft-deletes flag is used', function () {
+    Artisan::call('make:api-service', ['name' => 'Video', '--soft-deletes' => true]);
 
     $content = $this->getGeneratedFileContent('services', 'VideoService.php');
 
     expect($content)->toContain('public function restore')
-        ->and($content)->toContain('public function forceDelete')
-        ->and($content)->toContain('public function restoreMany')
+        ->and($content)->toContain('public function forceDelete');
+});
+
+test('service has bulk soft delete methods when --soft-deletes flag is used', function () {
+    Artisan::call('make:api-service', ['name' => 'Video', '--soft-deletes' => true]);
+
+    $content = $this->getGeneratedFileContent('services', 'VideoService.php');
+
+    expect($content)->toContain('public function restoreMany')
         ->and($content)->toContain('public function forceDeleteMany');
+});
+
+test('service does not have bulk methods when --no-bulk flag is used', function () {
+    Artisan::call('make:api-service', ['name' => 'Video', '--no-bulk' => true]);
+
+    $content = $this->getGeneratedFileContent('services', 'VideoService.php');
+
+    expect($content)->not->toContain('public function findMany')
+        ->and($content)->not->toContain('public function createMany')
+        ->and($content)->not->toContain('public function updateMany')
+        ->and($content)->not->toContain('public function deleteMany')
+        ->and($content)->not->toContain('VideoBulkRepositoryInterface');
+});
+
+test('service injects correct repositories based on flags', function () {
+    Artisan::call('make:api-service', ['name' => 'Video', '--soft-deletes' => true]);
+
+    $content = $this->getGeneratedFileContent('services', 'VideoService.php');
+
+    expect($content)->toContain('VideoRepositoryInterface $repository')
+        ->and($content)->toContain('VideoBulkRepositoryInterface $bulkRepository')
+        ->and($content)->toContain('VideoSoftDeleteRepositoryInterface $softDeleteRepository')
+        ->and($content)->toContain('VideoBulkSoftDeleteRepositoryInterface $bulkSoftDeleteRepository');
+});
+
+test('service with --no-bulk --soft-deletes only injects CRUD and soft delete repos', function () {
+    Artisan::call('make:api-service', ['name' => 'Video', '--no-bulk' => true, '--soft-deletes' => true]);
+
+    $content = $this->getGeneratedFileContent('services', 'VideoService.php');
+
+    expect($content)->toContain('VideoRepositoryInterface $repository')
+        ->and($content)->toContain('VideoSoftDeleteRepositoryInterface $softDeleteRepository')
+        ->and($content)->not->toContain('VideoBulkRepositoryInterface')
+        ->and($content)->not->toContain('VideoBulkSoftDeleteRepositoryInterface');
 });

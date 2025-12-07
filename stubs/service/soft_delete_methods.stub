@@ -1,0 +1,48 @@
+
+    /**
+     * Restore a soft-deleted record.
+     */
+    public function restore(int $id): bool
+    {
+        return $this->softDeleteRepository->restore($id);
+    }
+
+    /**
+     * Permanently delete a record.
+     */
+    public function forceDelete(int $id): bool
+    {
+        return $this->softDeleteRepository->forceDelete($id);
+    }
+
+    /**
+     * Find a record including soft-deleted.
+     */
+    public function findWithTrashed(int $id): ?object
+    {
+        return $this->softDeleteRepository->findWithTrashed($id);
+    }
+
+    /**
+     * Find only soft-deleted record.
+     */
+    public function findOnlyTrashed(int $id): ?object
+    {
+        return $this->softDeleteRepository->findOnlyTrashed($id);
+    }
+
+    /**
+     * Get all records including soft-deleted.
+     */
+    public function allWithTrashed(): iterable
+    {
+        return $this->softDeleteRepository->allWithTrashed();
+    }
+
+    /**
+     * Get only soft-deleted records.
+     */
+    public function onlyTrashed(): iterable
+    {
+        return $this->softDeleteRepository->onlyTrashed();
+    }

@@ -1,0 +1,40 @@
+
+    /**
+     * Find multiple records by IDs.
+     */
+    public function findMany(array $ids): Collection
+    {
+        return $this->bulkRepository->findMany($ids);
+    }
+
+    /**
+     * Find multiple records by column criteria.
+     */
+    public function findManyByColumns(array $criteria): Collection
+    {
+        return $this->bulkRepository->findManyByColumns($criteria);
+    }
+
+    /**
+     * Create multiple records.
+     */
+    public function createMany(array $records): Collection
+    {
+        return $this->bulkRepository->createMany($records);
+    }
+
+    /**
+     * Update multiple records.
+     */
+    public function updateMany(array $records): int
+    {
+        return $this->bulkRepository->updateMany($records);
+    }
+
+    /**
+     * Delete multiple records.
+     */
+    public function deleteMany(array $ids): int
+    {
+        return $this->bulkRepository->deleteMany($ids);
+    }

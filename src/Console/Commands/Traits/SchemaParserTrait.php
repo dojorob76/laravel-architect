@@ -39,9 +39,11 @@ trait SchemaParserTrait
         return $parsed;
     }
 
-    protected function getStub(string $name): string
+    protected function getStub(string $name, ?string $partialDirectory = null): string
     {
-        $path = __DIR__ . '/../../../../stubs/' . $name . '.stub';
+        $basePath = __DIR__ . '/../../../../stubs/';
+        $path = $partialDirectory ? $basePath . $partialDirectory . '/' : $basePath;
+        $path .= $name . '.stub';
         if (!file_exists($path)) {
             $this->error("Stub not found: {$path}");
             exit(1);
@@ -181,17 +183,6 @@ trait SchemaParserTrait
     protected function getRequestPath(string $className): string
     {
         return $this->getPath('requests') . "/{$className}Request.php";
-    }
-
-    /**
-     * Build full file path for a service.
-     *
-     * @param string $className The class name
-     * @return string The full path
-     */
-    protected function getServicePath(string $className): string
-    {
-        return $this->getPath('services') . "/{$className}Service.php";
     }
 
     /**
