@@ -114,7 +114,12 @@ class MakeApiBundleCommand extends Command
         $this->call('make:api-repository', $repositoryArgs);
 
         $this->info('⚙️  Creating service...');
-        $this->call('make:api-service', $nameOnlyArgs);
+        $serviceArgs = [
+            'name' => $name,
+            '--soft-deletes' => $softDeletes,
+            '--no-bulk' => $noBulk,
+        ];
+        $this->call('make:api-service', $serviceArgs);
 
         $this->info('✅ Creating form request...');
         $this->call('make:api-request', $schemaCompositeArgs);
