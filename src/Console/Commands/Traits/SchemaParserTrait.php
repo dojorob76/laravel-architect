@@ -229,18 +229,6 @@ trait SchemaParserTrait
     }
 
     /**
-     * Build full file path for a repository.
-     *
-     * @param string $className The class name
-     * @param string $prefix The repository prefix (e.g., 'Eloquent', 'MySQL', 'Postgres')
-     * @return string The full path
-     */
-    protected function getRepositoryPath(string $className, string $prefix = 'Eloquent'): string
-    {
-        return $this->getPath('repositories') . "/{$prefix}{$className}Repository.php";
-    }
-
-    /**
      * Build full file path for a migration.
      *
      * @param string $filename The migration filename

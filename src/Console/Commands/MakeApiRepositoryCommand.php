@@ -71,6 +71,16 @@ class MakeApiRepositoryCommand extends Command
     ];
 
     /**
+     * Maps operation types to their CLI option names.
+     */
+    protected const OPERATION_TYPE_OPTION = [
+        'crud' => 'crud-driver',
+        'bulk' => 'bulk-driver',
+        'soft_delete' => 'soft-delete-driver',
+        'bulk_soft_delete' => 'bulk-soft-delete-driver',
+    ];
+
+    /**
      * Resolve the driver for an operation type.
      * CLI option takes precedence over config.
      *
@@ -80,14 +90,7 @@ class MakeApiRepositoryCommand extends Command
      */
     protected function resolveDriver(string $type): string
     {
-        $optionMap = [
-            'crud' => 'crud-driver',
-            'bulk' => 'bulk-driver',
-            'soft_delete' => 'soft-delete-driver',
-            'bulk_soft_delete' => 'bulk-soft-delete-driver',
-        ];
-
-        $cliValue = $this->option($optionMap[$type]);
+        $cliValue = $this->option(self::OPERATION_TYPE_OPTION[$type]);
 
         $driver = $cliValue ?: \LaravelArchitect\Console\Commands\Support\ConfigHelper::driver($type);
 
@@ -162,14 +165,7 @@ class MakeApiRepositoryCommand extends Command
         string $modelNamespace,
         string $tableName
     ): void {
-        $optionMap = [
-            'crud' => 'crud-driver',
-            'bulk' => 'bulk-driver',
-            'soft_delete' => 'soft-delete-driver',
-            'bulk_soft_delete' => 'bulk-soft-delete-driver',
-        ];
-
-        $cliValue = $this->option($optionMap[$operationType]);
+        $cliValue = $this->option(self::OPERATION_TYPE_OPTION[$operationType]);
 
         // If user specified "all", generate for all drivers
         if ($cliValue === 'all') {
@@ -456,14 +452,7 @@ class MakeApiRepositoryCommand extends Command
      */
     protected function getDriversForBindingOutput(string $operationType): array
     {
-        $optionMap = [
-            'crud' => 'crud-driver',
-            'bulk' => 'bulk-driver',
-            'soft_delete' => 'soft-delete-driver',
-            'bulk_soft_delete' => 'bulk-soft-delete-driver',
-        ];
-
-        $cliValue = $this->option($optionMap[$operationType]);
+        $cliValue = $this->option(self::OPERATION_TYPE_OPTION[$operationType]);
 
         if ($cliValue === 'all') {
             return array_keys(self::DRIVER_NAME);

@@ -158,7 +158,7 @@ return [
     'paths' => [
         'models' => 'app/Models',
         'repositories' => 'app/Repositories',
-        'repository_interfaces' => 'app/Repositories/Interfaces',
+        'contracts' => 'app/Contracts',
         'services' => 'app/Services',
         'controllers' => 'app/Http/Controllers/Api',
         'requests' => 'app/Http/Requests',
@@ -173,7 +173,7 @@ return [
     'namespaces' => [
         'models' => 'App\Models',
         'repositories' => 'App\Repositories',
-        'repository_interfaces' => 'App\Repositories\Interfaces',
+        'contracts' => 'App\Contracts',
         'services' => 'App\Services',
         'controllers' => 'App\Http\Controllers\Api',
         'base_controller' => 'App\Http\Controllers\Controller',
