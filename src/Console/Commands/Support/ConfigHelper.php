@@ -5,21 +5,82 @@ namespace LaravelArchitect\Console\Commands\Support;
 class ConfigHelper
 {
     /**
+     * Build a helpful error message for missing config values.
+     *
+     * @param string $configKey The full config key that's missing
+     * @return string
+     */
+    private static function buildErrorMessage(string $configKey): string
+    {
+        return "Missing required config value: {$configKey}. " .
+               "Please ensure your config/api_scaffolding.php file is properly configured. " .
+               "If you haven't published the config file yet, run: " .
+               "php artisan vendor:publish --tag=laravel-architect-config";
+    }
+
+    /**
+     * Generic config retrieval with type safety and validation.
+     *
+     * @param string $section Config section (paths, namespaces, drivers, etc.)
+     * @param string $key     Config key within section
+     * @param string|null $cast Type to cast result to (int, string, bool, array, object)
+     * @param bool $nullable Whether null is acceptable (default: false)
+     * @return mixed
+     * @throws \RuntimeException If config key is missing or null when not nullable
+     */
+    private static function get(string $section, string $key, ?string $cast = null, bool $nullable = false): mixed
+    {
+        $configKey = "api_scaffolding.{$section}.{$key}";
+        $value = config($configKey);
+
+        if ($value === null && !$nullable) {
+            throw new \RuntimeException(self::buildErrorMessage($configKey));
+        }
+
+        return $cast ? self::castValue($value, $cast) : $value;
+    }
+
+    /**
+     * Cast value to specified type.
+     */
+    private static function castValue(mixed $value, string $type): mixed
+    {
+        return match($type) {
+            'int', 'integer' => (int) $value,
+            'string' => (string) $value,
+            'bool', 'boolean' => (bool) $value,
+            'array' => (array) $value,
+            'object' => (object) $value,
+            default => $value,
+        };
+    }
+
+    /**
+     * Get an entire config section dynamically.
+     *
+     * @param string $section Section name (paths, namespaces, etc.)
+     * @param string $returnType 'object' or 'array'
+     * @return object|array
+     * @throws \RuntimeException If config section is missing or empty
+     */
+    private static function getSection(string $section, string $returnType = 'object'): object|array
+    {
+        $configKey = "api_scaffolding.{$section}";
+        $data = config($configKey);
+
+        if (!is_array($data) || empty($data)) {
+            throw new \RuntimeException(self::buildErrorMessage($configKey));
+        }
+
+        return $returnType === 'object' ? (object) $data : $data;
+    }
+
+    /**
      * Get all configured namespaces as an object.
      */
     public static function namespaces(): object
     {
-        return (object) [
-            'models' => config('api_scaffolding.namespaces.models'),
-            'controllers' => config('api_scaffolding.namespaces.controllers'),
-            'services' => config('api_scaffolding.namespaces.services'),
-            'repositories' => config('api_scaffolding.namespaces.repositories'),
-            'contracts' => config('api_scaffolding.namespaces.contracts'),
-            'requests' => config('api_scaffolding.namespaces.requests'),
-            'resources' => config('api_scaffolding.namespaces.resources'),
-            'factories' => config('api_scaffolding.namespaces.factories'),
-            'baseController' => config('api_scaffolding.namespaces.base_controller'),
-        ];
+        return self::getSection('namespaces', 'object');
     }
 
     /**
@@ -27,19 +88,7 @@ class ConfigHelper
      */
     public static function paths(): object
     {
-        return (object) [
-            'models' => config('api_scaffolding.paths.models'),
-            'controllers' => config('api_scaffolding.paths.controllers'),
-            'services' => config('api_scaffolding.paths.services'),
-            'repositories' => config('api_scaffolding.paths.repositories'),
-            'contracts' => config('api_scaffolding.paths.contracts'),
-            'requests' => config('api_scaffolding.paths.requests'),
-            'resources' => config('api_scaffolding.paths.resources'),
-            'factories' => config('api_scaffolding.paths.factories'),
-            'migrations' => config('api_scaffolding.paths.migrations'),
-            'tests' => config('api_scaffolding.paths.tests'),
-            'routes' => config('api_scaffolding.paths.routes'),
-        ];
+        return self::getSection('paths', 'object');
     }
 
     /**
@@ -47,7 +96,7 @@ class ConfigHelper
      */
     public static function namespace(string $key): ?string
     {
-        return config("api_scaffolding.namespaces.{$key}");
+        return self::get('namespaces', $key, null, nullable: true);
     }
 
     /**
@@ -55,7 +104,7 @@ class ConfigHelper
      */
     public static function path(string $key): string
     {
-        return config("api_scaffolding.paths.{$key}");
+        return self::get('paths', $key);
     }
 
     /**
@@ -63,7 +112,7 @@ class ConfigHelper
      */
     public static function statusCode(string $key): int
     {
-        return (int) config("api_scaffolding.status_codes.{$key}", 200);
+        return self::get('status_codes', $key, 'int');
     }
 
     /**
@@ -71,7 +120,7 @@ class ConfigHelper
      */
     public static function statusCodes(): object
     {
-        return (object) config('api_scaffolding.status_codes', []);
+        return self::getSection('status_codes', 'object');
     }
 
     /**
@@ -79,7 +128,7 @@ class ConfigHelper
      */
     public static function message(string $key): string
     {
-        return (string) config("api_scaffolding.messages.{$key}", '');
+        return self::get('messages', $key, 'string');
     }
 
     /**
@@ -87,7 +136,7 @@ class ConfigHelper
      */
     public static function messages(): object
     {
-        return (object) config('api_scaffolding.messages', []);
+        return self::getSection('messages', 'object');
     }
 
     /**
@@ -95,7 +144,7 @@ class ConfigHelper
      */
     public static function paginationLimit(): int
     {
-        return (int) config('api_scaffolding.response_settings.pagination_limit', 15);
+        return self::get('response_settings', 'pagination_limit', 'int');
     }
 
     /**
@@ -103,7 +152,7 @@ class ConfigHelper
      */
     public static function jsonKey(): string
     {
-        return (string) config('api_scaffolding.response_settings.json_key', 'data');
+        return self::get('response_settings', 'json_key', 'string');
     }
 
     /**
@@ -122,7 +171,7 @@ class ConfigHelper
      */
     public static function driver(string $type): string
     {
-        return config("api_scaffolding.drivers.{$type}", 'eloquent');
+        return self::get('drivers', $type, 'string');
     }
 
     /**
@@ -132,11 +181,6 @@ class ConfigHelper
      */
     public static function drivers(): array
     {
-        return config('api_scaffolding.drivers', [
-            'crud' => 'eloquent',
-            'bulk' => 'eloquent',
-            'soft_delete' => 'eloquent',
-            'bulk_soft_delete' => 'eloquent',
-        ]);
+        return self::getSection('drivers', 'array');
     }
 }

@@ -41,8 +41,9 @@ describe('ConfigHelper', function () {
             expect(ConfigHelper::statusCode('created'))->toBe(201);
         });
 
-        test('returns default for unknown key', function () {
-            expect(ConfigHelper::statusCode('unknown'))->toBe(200);
+        test('throws exception for unknown key', function () {
+            expect(fn() => ConfigHelper::statusCode('unknown'))
+                ->toThrow(\RuntimeException::class, 'Missing required config value: api_scaffolding.status_codes.unknown');
         });
     });
 
@@ -51,8 +52,9 @@ describe('ConfigHelper', function () {
             expect(ConfigHelper::message('created'))->toContain('created');
         });
 
-        test('returns empty string for unknown key', function () {
-            expect(ConfigHelper::message('unknown'))->toBe('');
+        test('throws exception for unknown key', function () {
+            expect(fn() => ConfigHelper::message('unknown'))
+                ->toThrow(\RuntimeException::class, 'Missing required config value: api_scaffolding.messages.unknown');
         });
     });
 
