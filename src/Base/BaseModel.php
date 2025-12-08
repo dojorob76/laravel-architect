@@ -9,8 +9,6 @@ abstract class BaseModel extends Model
 {
     use HasFactory;
 
-    protected $dateFormat = 'Y-m-d H:i:s';
-
     protected static function boot(): void
     {
         parent::boot();
