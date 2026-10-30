@@ -4,6 +4,11 @@
 
 Laravel Architect generates production-ready API scaffolding with complete CRUD operations, batch processing, soft deletes, multi-tenancy support, composite unique keys, and comprehensive PEST tests—all while enforcing your company's coding standards.
 
+## 🚧 UNDER CONSTRUCTION 🚧
+
+### IMPORTANT: This package is UNDER CONSTRUCTION, and not yet ready for prime time. 
+This notice will be removed once the package is fully functional and tested. Until then, please refrain from forking/implementing into your own projects, as *it will _NOT_ work as expected*.
+
 ---
 
 ## 📑 Table of Contents
